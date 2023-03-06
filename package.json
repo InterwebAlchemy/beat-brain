@@ -1,0 +1,74 @@
+{
+  "name": "@interwebalchemy/beat-brain",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "ChatGPT-powered music recommendations via Spotify",
+  "main": "index.js",
+  "keywords": [
+    "prompt engineering",
+    "gpt-3",
+    "ai",
+    "openai",
+    "open ai",
+    "chatgpt",
+    "spotify",
+    "music recommendations",
+    "playlist",
+    "langchain"
+  ],
+  "author": {
+    "name": "Interweb Alchemy",
+    "url": "https://github.com/InterwebAlchemy/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/InterwebAlchemy/obsidian-ai-research-assistant.git"
+  },
+  "prettier": "prettier-config-standard",
+  "lint-staged": {
+    "package.json": "scriptlint --fix",
+    "*.{js,ts,jsx,tsx}": "eslint --fix",
+    "*.{js,ts,jsx,tsx,css,md}": "prettier --write",
+    "*.{yaml,yml}": "yamllint"
+  },
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
+    "prepare": "is-ci || husky install",
+    "start": "next start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.4.4",
+    "@commitlint/config-conventional": "^17.4.4",
+    "@commitlint/prompt-cli": "^17.4.4",
+    "@semantic-release/changelog": "^6.0.2",
+    "@semantic-release/git": "^10.0.1",
+    "@types/node": "^18.14.6",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "eslint": "^8.35.0",
+    "eslint-config-standard-with-typescript": "^34.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "husky": "^8.0.3",
+    "is-ci": "^3.0.1",
+    "lint-staged": "^13.1.2",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.8.4",
+    "prettier-config-standard": "^5.0.0",
+    "scriptlint": "^2.2.0",
+    "semantic-release": "^20.1.1",
+    "typescript": "^4.9.5",
+    "yaml-lint": "^1.7.0"
+  },
+  "dependencies": {
+    "next": "^13.2.3",
+    "openai": "^3.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
