@@ -8,12 +8,20 @@
     "noEmit": true,
     "incremental": true,
     "esModuleInterop": true,
+    "target": "ESNext",
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "strictNullChecks": true
   },
-  "include": ["next-env.d.ts", "src/**/*", "scripts/**/*", "*.config.js"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.d.ts,",
+    "src/**/*",
+    "scripts/**/*",
+    "*.config.js"
+  ],
   "exclude": ["node_modules"]
 }
