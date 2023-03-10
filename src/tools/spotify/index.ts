@@ -1,11 +1,11 @@
 import { DynamicTool } from 'langchain/tools'
 
 import SpotifyTracks from './tracks'
-import SpotifyPlaylists from './playlists'
 import SpotifyAnalysis from './analysis'
+import SpotifyArtists from './artists'
 
-const SpotifyTracksTool = new DynamicTool(SpotifyTracks)
-const SpotifyPlaylistsTool = new DynamicTool(SpotifyPlaylists)
 const SpotifyAnalysisTool = new DynamicTool(SpotifyAnalysis)
+const SpotifyTracksTool = new DynamicTool(SpotifyTracks)
+const SpotifyArtistsTool = new DynamicTool(SpotifyArtists)
 
-export default [SpotifyTracksTool, SpotifyPlaylistsTool, SpotifyAnalysisTool]
+export default [SpotifyAnalysisTool, SpotifyArtistsTool, SpotifyTracksTool]

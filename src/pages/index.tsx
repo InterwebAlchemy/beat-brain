@@ -25,6 +25,7 @@ const HomePage = (): React.ReactElement => {
       console.error(error)
     }
   }
+
   const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
     const form = e.currentTarget

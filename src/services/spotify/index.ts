@@ -6,8 +6,9 @@ import type {
 } from 'spotify-web-api-ts/types/types/SpotifyObjects'
 
 export interface GetTrackRequest {
-  artist: string
-  song: string
+  artist?: string
+  song?: string
+  input?: string
 }
 
 class Spotify {
@@ -56,8 +57,25 @@ class Spotify {
     return analysis
   }
 
-  async getTrack({ artist, song }: GetTrackRequest): Promise<Track> {
-    const search = await this.api.search.searchTracks(`${artist} ${song}`, {
+  async getTrack({ artist, song, input }: GetTrackRequest): Promise<Track> {
+    let searchString = ''
+
+    if (typeof input !== 'undefined' && input !== null) {
+      searchString = input
+    } else {
+      const hasArtist = typeof artist !== 'undefined' || artist === null
+      const hasSong = typeof song !== 'undefined' || song === null
+
+      if (hasArtist && hasSong) {
+        searchString = `${song} - ${artist}`
+      } else if (hasSong) {
+        searchString = song
+      } else if (hasArtist) {
+        searchString = artist
+      }
+    }
+
+    const search = await this.api.search.searchTracks(searchString, {
       limit: 1
     })
 

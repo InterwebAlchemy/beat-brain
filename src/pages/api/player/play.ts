@@ -9,8 +9,6 @@ export default async function handler(req, res): Promise<void> {
   const session = await getServerSession(req, res, authOptions)
 
   if (typeof session !== 'undefined' && session !== null) {
-    console.log('SESSION:', session)
-
     if (req.method === 'POST') {
       // @ts-expect-error
       const { accessToken } = session

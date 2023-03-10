@@ -12,6 +12,40 @@ const WebPlayer = (): React.ReactElement => {
   const [player, setPlayer] = useState<Spotify.Player>()
   const [currentTrack, setCurrentTrack] = useState<Spotify.Track>()
 
+  const sendChat = async ({
+    type,
+    input
+  }: Record<string, any>): Promise<void> => {
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type,
+          input
+        })
+      }).then(async (response) => await response.json())
+
+      console.log(response)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const getRecommendations = (): void => {
+    sendChat({
+      type: 'track',
+      input: {
+        song: currentTrack?.name,
+        artist: currentTrack?.artists.map((artist) => artist.name).join(', ')
+      }
+    }).catch((error) => {
+      console.error(error)
+    })
+  }
+
   useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://sdk.scdn.co/spotify-player.js'
@@ -116,8 +150,6 @@ const WebPlayer = (): React.ReactElement => {
     }
   }, [deviceId])
 
-  useEffect(() => {}, [isActive])
-
   if (!isActive) {
     return (
       <div className="container">
@@ -133,7 +165,17 @@ const WebPlayer = (): React.ReactElement => {
     return (
       <div className="container">
         <div className="main-wrapper">
-          {typeof currentTrack !== 'undefined' ? (
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <button
+              className="btn-beatbrain"
+              type="button"
+              onClick={getRecommendations}>
+              BeatBrain
+            </button>
+          ) : (
+            <></>
+          )}
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
             <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
               <img
                 src={currentTrack.album.images[0].url}
@@ -155,16 +197,16 @@ const WebPlayer = (): React.ReactElement => {
             ) : (
               <></>
             )}
-            {typeof currentTrack !== 'undefined' ? (
+            {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
               <div className="now-playing__artist">
-                {currentTrack.artists.map((artist) => {
+                {currentTrack.artists.map((artist, index) => {
                   return (
-                    <a
-                      key={artist.uri}
-                      href={spotifyUriToUrl(artist.uri)}
-                      target="_blank">
-                      {artist.name}
-                    </a>
+                    <React.Fragment key={artist.uri}>
+                      <a href={spotifyUriToUrl(artist.uri)} target="_blank">
+                        {artist.name}
+                      </a>
+                      {index !== currentTrack.artists.length - 1 ? ', ' : ''}
+                    </React.Fragment>
                   )
                 })}
               </div>
