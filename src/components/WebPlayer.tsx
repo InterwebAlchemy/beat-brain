@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@supabase/auth-helpers-react'
 
 import spotifyUriToUrl from '../utils/spotifyUriToUrl'
 
-const WebPlayer = (): React.ReactElement => {
-  const { data: session, status } = useSession()
+const WebPlayer = ({ setOutput }): React.ReactElement => {
+  const session = useSession()
 
-  const [isPaused, setIsPaused] = useState(false)
+  const [isPaused, setIsPaused] = useState(true)
   const [isActive, setIsActive] = useState(false)
   const [deviceId, setDeviceId] = useState<string>()
   const [player, setPlayer] = useState<Spotify.Player>()
@@ -28,6 +28,8 @@ const WebPlayer = (): React.ReactElement => {
         })
       }).then(async (response) => await response.json())
 
+      setOutput(JSON.parse(response.response.output))
+
       console.log(response)
     } catch (error) {
       console.error(error)
@@ -46,21 +48,39 @@ const WebPlayer = (): React.ReactElement => {
     })
   }
 
+  const transferPlayback = (): void => {
+    fetch('/api/player/play', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        deviceId
+      })
+    })
+      .then(async (response) => await response.json())
+      .then((data) => {
+        setIsActive(true)
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+  }
+
   useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://sdk.scdn.co/spotify-player.js'
     script.async = true
 
-    if (status === 'authenticated') {
+    if (session !== null) {
       document.body.appendChild(script)
     }
 
     window.onSpotifyWebPlaybackSDKReady = (): void => {
       const player = new window.Spotify.Player({
         name: 'BeatBrain',
-        getOAuthToken: (cb) => {
-          // @ts-expect-error
-          cb(session.accessToken ?? '')
+        getOAuthToken: (func) => {
+          func(session?.provider_token ?? '')
         },
         volume: 0.5
       })
@@ -82,11 +102,9 @@ const WebPlayer = (): React.ReactElement => {
 
         const { device_id: deviceId } = playerInstance
 
-        console.log(`Device ${deviceId} Disconnected...`)
-      })
+        setIsActive(false)
 
-      player.addListener('autoplay_failed', () => {
-        console.log('Could not autoplay...')
+        console.log(`Device ${deviceId} Disconnected...`)
       })
 
       player.addListener('player_state_changed', (state) => {
@@ -97,7 +115,7 @@ const WebPlayer = (): React.ReactElement => {
           player
             .getCurrentState()
             .then((state) => {
-              state === null ? setIsActive(false) : setIsActive(true)
+              console.log(state)
             })
             .catch((error) => {
               console.error(error)
@@ -114,63 +132,55 @@ const WebPlayer = (): React.ReactElement => {
           console.error(error)
         })
     }
-    // @ts-expect-error
-  }, [session?.accessToken, status])
+
+    return (): void => {
+      if (typeof player !== 'undefined' && player !== null) {
+        player.removeListener('ready')
+        player.removeListener('not_ready')
+        player.removeListener('player_state_changed')
+
+        player.disconnect()
+      }
+    }
+  }, [session?.provider_token])
 
   useEffect(() => {
     if (typeof currentTrack !== 'undefined' && currentTrack !== null) {
       console.log(currentTrack)
     }
-  }, [currentTrack])
-
-  useEffect(() => {
-    if (
-      typeof deviceId !== 'undefined' &&
-      deviceId !== null &&
-      deviceId !== '' &&
-      !isActive
-    ) {
-      fetch('/api/player/play', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          deviceId
-        })
-      })
-        .then(async (response) => await response.json())
-        .then((data) => {
-          console.log('TRANSFERRED PLAYBACK')
-          console.log(data)
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    }
-  }, [deviceId])
+  }, [currentTrack?.id])
 
   if (!isActive) {
     return (
-      <div className="container">
-        <div className="main-wrapper">
-          <p>
-            Instance not active. Transfer your playback to{' '}
-            <strong>BeatBrain</strong> using your Spotify app
-          </p>
-        </div>
+      <div className="main-wrapper">
+        <p>
+          Instance not active. Transfer your playback to{' '}
+          <strong>BeatBrain</strong> using your Spotify app
+        </p>
+        {typeof deviceId !== 'undefined' &&
+        deviceId !== null &&
+        deviceId !== '' ? (
+          <button
+            className="btn-transfer-playback"
+            type="button"
+            onClick={transferPlayback}>
+            Listen in BeatBrain
+          </button>
+        ) : (
+          <></>
+        )}
       </div>
     )
   } else {
     return (
-      <div className="container">
-        <div className="main-wrapper">
+      <div className="main-wrapper">
+        <div className="album-art">
           {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
             <button
-              className="btn-beatbrain"
+              className="btn-recommendations"
               type="button"
               onClick={getRecommendations}>
-              BeatBrain
+              Recommendations
             </button>
           ) : (
             <></>
@@ -186,64 +196,64 @@ const WebPlayer = (): React.ReactElement => {
           ) : (
             <></>
           )}
+        </div>
 
-          <div className="now-playing__side">
-            {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
-              <div className="now-playing__name">
-                <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
-                  {currentTrack.name}
-                </a>
-              </div>
-            ) : (
-              <></>
-            )}
-            {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
-              <div className="now-playing__artist">
-                {currentTrack.artists.map((artist, index) => {
-                  return (
-                    <React.Fragment key={artist.uri}>
-                      <a href={spotifyUriToUrl(artist.uri)} target="_blank">
-                        {artist.name}
-                      </a>
-                      {index !== currentTrack.artists.length - 1 ? ', ' : ''}
-                    </React.Fragment>
-                  )
-                })}
-              </div>
-            ) : (
-              <></>
-            )}
+        <div className="now-playing__side">
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <div className="now-playing__name">
+              <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
+                {currentTrack.name}
+              </a>
+            </div>
+          ) : (
+            <></>
+          )}
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <div className="now-playing__artist">
+              {currentTrack.artists.map((artist, index) => {
+                return (
+                  <React.Fragment key={artist.uri}>
+                    <a href={spotifyUriToUrl(artist.uri)} target="_blank">
+                      {artist.name}
+                    </a>
+                    {index !== currentTrack.artists.length - 1 ? ', ' : ''}
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          ) : (
+            <></>
+          )}
 
-            <button
-              className="btn-spotify"
-              onClick={() => {
-                player?.previousTrack().catch((error) => {
-                  console.error(error)
-                })
-              }}>
-              &lt;&lt;
-            </button>
+          <button
+            className="btn-spotify"
+            onClick={() => {
+              player?.previousTrack().catch((error) => {
+                console.error(error)
+              })
+            }}>
+            &lt;&lt;
+          </button>
 
-            <button
-              className="btn-spotify"
-              onClick={() => {
-                player?.togglePlay().catch((error) => {
-                  console.error(error)
-                })
-              }}>
-              {isPaused ? 'PLAY' : 'PAUSE'}
-            </button>
+          <button
+            className="btn-spotify"
+            onClick={() => {
+              player?.togglePlay().catch((error) => {
+                console.error(error)
+              })
+            }}>
+            {isPaused ? 'PLAY' : 'PAUSE'}
+          </button>
 
-            <button
-              className="btn-spotify"
-              onClick={() => {
-                player?.nextTrack().catch((error) => {
-                  console.error(error)
-                })
-              }}>
-              &gt;&gt;
-            </button>
-          </div>
+          <button
+            className="btn-spotify"
+            onClick={() => {
+              player?.nextTrack().catch((error) => {
+                console.error(error)
+              })
+            }}>
+            &gt;&gt;
+          </button>
         </div>
       </div>
     )

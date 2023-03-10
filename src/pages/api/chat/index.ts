@@ -1,6 +1,6 @@
 import requestHandler from '../../../utils/requestHandler'
 
-import { bot } from '../../../services/chat'
+import { chat } from '../../../services/chat'
 
 const sendChatRequest = async (req, res): Promise<void> => {
   const { type, input } = req.body
@@ -15,15 +15,20 @@ const sendChatRequest = async (req, res): Promise<void> => {
 
       console.log(song, artist)
 
-      const response = await bot.call({
-        mode: 'Track',
-        input: `${song as string} - ${artist as string}`
-      })
+      try {
+        const response = await chat({
+          mode: 'Track',
+          input: `${song as string} - ${artist as string}`
+        })
 
-      console.log(response)
+        console.log(response)
 
-      res.status(200).json({ message: 'Track Submitted', input, response })
+        res.status(200).json({ message: 'Track Submitted', input, response })
+      } catch (error) {
+        console.log(error)
 
+        res.status(500).json({ error })
+      }
       break
     }
     default:

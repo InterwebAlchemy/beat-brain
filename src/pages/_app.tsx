@@ -1,12 +1,27 @@
-import { SessionProvider } from 'next-auth/react'
+import { useState } from 'react'
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import {
+  SessionContextProvider,
+  type Session
+} from '@supabase/auth-helpers-react'
+import { type AppProps } from 'next/app'
 
-export default function App({
+import '../styles/base.css'
+
+function BeatBrainApp({
   Component,
-  pageProps: { session, ...pageProps }
-}): React.ReactElement {
+  pageProps
+}: AppProps<{
+  initialSession: Session
+}>): React.ReactElement {
+  const [supabase] = useState(() => createBrowserSupabaseClient())
+
   return (
-    <SessionProvider session={session}>
+    <SessionContextProvider
+      supabaseClient={supabase}
+      initialSession={pageProps.initialSession}>
       <Component {...pageProps} />
-    </SessionProvider>
+    </SessionContextProvider>
   )
 }
+export default BeatBrainApp

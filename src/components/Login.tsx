@@ -1,39 +1,27 @@
-import { useSession, signIn, signOut } from 'next-auth/react'
+import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+
+import Spotify from '../services/spotify/auth'
 
 const Login = (): React.ReactElement => {
-  const { data: session, status } = useSession()
+  const session = useSession()
+  const supabase = useSupabaseClient()
 
   const onClick = (): void => {
-    if (typeof session !== 'undefined' && session !== null) {
-      handleSignOut().catch((error) => {
-        console.log(error)
-      })
+    handleAuthentication().catch((error) => {
+      console.log(error)
+    })
+  }
+
+  const handleAuthentication = async (): Promise<void> => {
+    if (session === null) {
+      await supabase.auth.signInWithOAuth(Spotify)
     } else {
-      handleSignIn().catch((error) => {
-        console.log(error)
-      })
+      await supabase.auth.signOut()
     }
   }
 
-  const handleSignIn = async (): Promise<void> => {
-    await signIn('spotify')
-  }
-
-  const handleSignOut = async (): Promise<void> => {
-    await signOut()
-  }
-
   return (
-    <>
-      {typeof session !== 'undefined' && session !== null ? (
-        <p>Signed in as {session?.user?.name}</p>
-      ) : (
-        <></>
-      )}
-      <button onClick={onClick} disabled={status === 'loading'}>
-        Sign {typeof session !== 'undefined' && session !== null ? 'Out' : 'In'}
-      </button>
-    </>
+    <button onClick={onClick}>{session !== null ? 'Log Out' : 'Log In'}</button>
   )
 }
 

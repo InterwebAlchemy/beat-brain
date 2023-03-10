@@ -1,26 +1,35 @@
-import { getServerSession } from 'next-auth/next'
-
-import { authOptions } from '../auth/[...nextauth]'
-
 import Spotify from '../../../services/spotify'
 
-export default async function handler(req, res): Promise<void> {
-  const session = await getServerSession(req, res, authOptions)
+import requestHandler from '../../../utils/requestHandler'
 
-  if (typeof session !== 'undefined' && session !== null) {
-    if (req.method === 'GET') {
-      // @ts-expect-error
-      const { accessToken } = session
+const transferPlayback = async (req, res): Promise<void> => {
+  const { accessToken } = req
 
-      const spotify = new Spotify(accessToken)
+  const spotify = new Spotify(accessToken)
 
-      const track = await spotify.getCurrentlyPlaying()
+  let track
 
+  try {
+    track = await spotify.getCurrentlyPlaying()
+
+    if (typeof track !== 'undefined' && track !== null) {
       res.status(200).json(track)
     } else {
-      res.status(405).json({ message: 'Method not allowed' })
+      res.status(500).json({ message: 'Internal server error' })
     }
-  } else {
-    res.status(401).json({ message: 'Unauthorized' })
+  } catch (error) {
+    res.status(500).json({ error })
   }
+}
+
+export default async function handler(req, res): Promise<void> {
+  await requestHandler(
+    {
+      authenticated: true,
+      methods: ['GET'],
+      handler: transferPlayback
+    },
+    req,
+    res
+  )
 }
