@@ -1,8 +1,9 @@
 import { SpotifyWebApi } from 'spotify-web-api-ts'
 
-const SpotifyAnalysis = {
-  name: 'Spotify Artist Information',
-  description: '"artist" Get relevant details for an Artist on Spotify',
+const SpotifyArtists = {
+  name: 'Artist Info',
+  description:
+    '$Artist -> Get popularity and genres for an Artist from Spotify',
   func: async (artistName): Promise<string> => {
     console.log(`Getting details for ${artistName as string} from Spotify...`)
 
@@ -13,56 +14,71 @@ const SpotifyAnalysis = {
         redirectUri: process.env.NEXTAUTH_URL
       })
 
-      const { access_token: accessToken } =
-        await spotify.getTemporaryAppTokens()
+      try {
+        const { access_token: accessToken } =
+          await spotify.getTemporaryAppTokens()
 
-      spotify.setAccessToken(accessToken)
+        spotify.setAccessToken(accessToken)
 
-      const artist = await spotify.artists.getArtist(artistName.toString())
+        try {
+          const artists = await spotify.artists.getArtists(
+            artistName.split(',').map((item) => item.trim())
+          )
 
-      if (typeof artist !== 'undefined' && artist !== null) {
-        const { popularity, genres } = artist
+          console.log(artists)
 
-        const artistDescription: string[] = [
-          `This playlist should feature songs from the following genres: ${genres.join(
-            ', '
-          )}.`
-        ]
+          const artistsDescription: string[] = artists.map((artist) => {
+            if (typeof artist !== 'undefined' && artist !== null) {
+              const { popularity, genres } = artist
 
-        if (popularity > 85) {
-          artistDescription.push(
-            'This playlist should feature songs from the most well-known artists.'
-          )
-        } else if (popularity > 70) {
-          artistDescription.push(
-            'This playlist should feature songs from very popular artists.'
-          )
-        } else if (popularity > 30) {
-          artistDescription.push(
-            'This playlist should feature songs from less popular artists.'
-          )
-        } else if (popularity > 10) {
-          artistDescription.push(
-            'This playlist should feature songs from relatively unknown artists.'
-          )
-        } else {
-          artistDescription.push(
-            'This playlist should feature songs from very obscure artists.'
-          )
+              const artistDescription: string[] = [
+                `This playlist should feature songs from the following genres: ${genres.join(
+                  ', '
+                )}.`
+              ]
+
+              if (popularity > 85) {
+                artistDescription.push(
+                  'This playlist should feature songs from the most well-known artists.'
+                )
+              } else if (popularity > 70) {
+                artistDescription.push(
+                  'This playlist should feature songs from very popular artists.'
+                )
+              } else if (popularity > 30) {
+                artistDescription.push(
+                  'This playlist should feature songs from less popular artists.'
+                )
+              } else if (popularity > 10) {
+                artistDescription.push(
+                  'This playlist should feature songs from relatively unknown artists.'
+                )
+              } else {
+                artistDescription.push(
+                  'This playlist should feature songs from very obscure artists.'
+                )
+              }
+
+              return artistDescription.join('\n')
+            } else {
+              return ''
+            }
+          })
+
+          return artistsDescription.join('\n')
+        } catch (error) {
+          console.error(error)
         }
-
-        return artistDescription.join('\n')
-      } else {
-        return `${
-          artistName as string
-        } is not on Spotify. Please find another Artist.`
+      } catch (error) {
+        console.log('Could not get access token')
+        console.error(error)
       }
     } catch (error) {
       console.error(error)
     }
 
-    return 'Error: Could not find artist'
+    return 'Error: Could not find artist info'
   }
 }
 
-export default SpotifyAnalysis
+export default SpotifyArtists

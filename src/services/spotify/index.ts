@@ -21,14 +21,6 @@ class Spotify {
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
       redirectUri: process.env.NEXTAUTH_URL
     })
-
-    this.getMe()
-      .then((me) => {
-        console.log('Spotify API authenticated', me)
-      })
-      .catch((err) => {
-        console.error('Spotify API authentication failed', err)
-      })
   }
 
   async getMe(): Promise<any> {

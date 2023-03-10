@@ -1,8 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-import { authOptions } from '../pages/api/auth/[...nextauth]'
-
-import getServerSession from './extendedServerSession'
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
 export interface ExtendedNextApiRequest extends NextApiRequest {
   accessToken?: string
@@ -38,10 +36,16 @@ const requestHandler = async (
 
   if (options.methods?.includes(req.method)) {
     if (options?.authenticated) {
-      const session = await getServerSession(req, res, authOptions)
+      // Create authenticated Supabase Client
+      const supabase = createServerSupabaseClient({ req, res })
+
+      // Check if we have a session
+      const {
+        data: { session }
+      } = await supabase.auth.getSession()
 
       if (typeof session !== 'undefined' && session !== null) {
-        const { accessToken } = session
+        const accessToken = session?.provider_token
 
         if (typeof accessToken !== 'undefined' && accessToken !== null) {
           try {
