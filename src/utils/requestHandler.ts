@@ -21,7 +21,7 @@ const DEFAULT_HANDLER_OPTIONS: RequestHandlerOptions = {
   authenticated: true,
   methods: ['POST'],
   handler: async (req: ExtendedNextApiRequest, res: NextApiResponse) => {
-    console.log(req)
+    console.debug(req)
 
     res.status(500).json({ message: 'Internal server error' })
   }

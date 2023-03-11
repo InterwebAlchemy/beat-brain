@@ -5,8 +5,6 @@ const SpotifyArtists = {
   description:
     '$Artist -> Get popularity and genres for an Artist from Spotify',
   func: async (artistName): Promise<string> => {
-    console.log(`Getting details for ${artistName as string} from Spotify...`)
-
     try {
       const spotify = new SpotifyWebApi({
         clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -24,8 +22,6 @@ const SpotifyArtists = {
           const artists = await spotify.artists.getArtists(
             artistName.split(',').map((item) => item.trim())
           )
-
-          console.log(artists)
 
           const artistsDescription: string[] = artists.map((artist) => {
             if (typeof artist !== 'undefined' && artist !== null) {
@@ -70,7 +66,6 @@ const SpotifyArtists = {
           console.error(error)
         }
       } catch (error) {
-        console.log('Could not get access token')
         console.error(error)
       }
     } catch (error) {

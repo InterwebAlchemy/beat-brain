@@ -23,7 +23,7 @@ const tools = SpotifyTools
 const agentPrompt = ZeroShotAgent.createPrompt(tools, {
   prefix: `${BEATBRAIN_PREFIX}\n${BEATBRAIN_MODES}\n${BEATBRAIN_TOOLS}`,
   suffix: `${BEATBRAIN_SUFFIX}`,
-  inputVariables: ['input', 'agent_scratchpad', 'mode']
+  inputVariables: ['input', 'agent_scratchpad']
 })
 
 const chatPrompt = ChatPromptTemplate.fromPromptMessages([
@@ -55,6 +55,6 @@ export const bot = AgentExecutor.fromAgentAndTools({
   agent,
   tools,
   returnIntermediateSteps: true,
-  maxIterations: 3,
+  maxIterations: 5,
   earlyStoppingMethod: 'generate'
 })

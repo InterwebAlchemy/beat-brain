@@ -88,49 +88,25 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
       setPlayer(player)
 
       player.addListener('ready', (playerInstance) => {
-        console.log('READY:', playerInstance)
-
         const { device_id: deviceId } = playerInstance
 
         setDeviceId(deviceId)
-
-        console.log('Device ID: ', deviceId)
       })
 
-      player.addListener('not_ready', (playerInstance) => {
-        console.log('NOT READY:', playerInstance)
-
-        const { device_id: deviceId } = playerInstance
-
+      player.addListener('not_ready', () => {
         setIsActive(false)
-
-        console.log(`Device ${deviceId} Disconnected...`)
       })
 
       player.addListener('player_state_changed', (state) => {
         if (typeof state !== 'undefined' && state !== null) {
           setCurrentTrack(state.track_window.current_track)
           setIsPaused(state.paused)
-
-          player
-            .getCurrentState()
-            .then((state) => {
-              console.log(state)
-            })
-            .catch((error) => {
-              console.error(error)
-            })
         }
       })
 
-      player
-        .connect()
-        .then(async (): Promise<void> => {
-          console.log('Web Player connected')
-        })
-        .catch((error) => {
-          console.error(error)
-        })
+      player.connect().catch((error) => {
+        console.error(error)
+      })
     }
 
     return (): void => {
@@ -143,12 +119,6 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
       }
     }
   }, [session?.provider_token])
-
-  useEffect(() => {
-    if (typeof currentTrack !== 'undefined' && currentTrack !== null) {
-      console.log(currentTrack)
-    }
-  }, [currentTrack?.id])
 
   if (!isActive) {
     return (

@@ -4,8 +4,6 @@ const SpotifyAnalysis = {
   name: 'Analyze Track',
   description: "$Track -> Analyze a Track's audio features on Spotify",
   func: async (trackName): Promise<string> => {
-    console.log(`Analyzing ${trackName as string}...`)
-
     try {
       const spotify = new SpotifyWebApi({
         clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -29,14 +27,10 @@ const SpotifyAnalysis = {
 
           const track = search.items[0]
 
-          console.log(track)
-
           try {
             const analysis = await spotify.tracks.getAudioFeaturesForTrack(
               track.id
             )
-
-            console.log(analysis)
 
             const analysisDescription: string[] = []
 

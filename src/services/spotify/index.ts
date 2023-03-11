@@ -73,6 +73,26 @@ class Spotify {
 
     return search.items[0]
   }
+
+  async getTopArtists(): Promise<any> {
+    const topArtists = await this.api.personalization.getMyTopArtists()
+
+    return topArtists
+  }
+
+  async getInitialDetails(): Promise<any> {
+    const [me, topArtists, currentTrack] = await Promise.all([
+      this.getMe(),
+      this.getTopArtists(),
+      this.getCurrentlyPlaying()
+    ])
+
+    return {
+      me,
+      topArtists,
+      currentTrack
+    }
+  }
 }
 
 export default Spotify

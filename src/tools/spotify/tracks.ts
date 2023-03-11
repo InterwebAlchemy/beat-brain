@@ -4,8 +4,6 @@ const SpotifyTracks = {
   name: 'Track Availability',
   description: '$Track -> Make sure Tracks is available on Spotify',
   func: async (trackName): Promise<string> => {
-    console.log(`Checking if ${trackName as string} is available on Spotify...`)
-
     try {
       const spotify = new SpotifyWebApi({
         clientId: process.env.SPOTIFY_CLIENT_ID,

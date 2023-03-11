@@ -1,15 +1,87 @@
 import React, { useEffect, useState } from 'react'
 
-import { useSession, useUser } from '@supabase/auth-helpers-react'
+import sampleSize from 'lodash.samplesize'
+
+import { useSession } from '@supabase/auth-helpers-react'
 
 import Login from '../components/Login'
 import WebPlayer from '../components/WebPlayer'
 
 const HomePage = (): React.ReactElement => {
   const session = useSession()
-  const user = useUser()
 
+  const [greeting, setGreeting] = useState<string>('')
   const [output, setOutput] = useState<Record<string, any> | null>(null)
+
+  const greet = async (): Promise<void> => {
+    console.log('trying to greet the user')
+    try {
+      const { details } = await fetch('/api/spotify/info').then(
+        async (response) => {
+          return await response.json()
+        }
+      )
+
+      console.log(details)
+
+      const input = [
+        {
+          role: 'user',
+          content: `Hey there! I'm ${details.me.display_name as string}.`
+        },
+        {
+          role: 'user',
+          content: `Some of my favorite artists are: ${
+            sampleSize(
+              details.topArtists.items
+                .filter(({ type }) => type === 'artists')
+                .map((artist) => artist.name)
+            ).join(', ') as string
+          }`
+        }
+      ]
+
+      if (
+        typeof details.currentTrack !== 'undefined' &&
+        details.currentTrack !== null &&
+        details.currentTrack !== '' &&
+        details.currentTrack?.currently_playing_type === 'track'
+      ) {
+        input.push({
+          role: 'user',
+          content: `I'm currently listening to ${
+            details.currentTrack.item.name as string
+          } by ${
+            details.currentTrack.item.artists
+              .map((artist) => artist.name)
+              .join(', ') as string
+          }.`
+        })
+      }
+
+      input.push({
+        role: 'system',
+        content: 'Greet the user.'
+      })
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'chat',
+          input
+        })
+      }).then(async (response) => await response.json())
+
+      console.log(response)
+
+      setGreeting(response.response.choices[0].message.content)
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const sendChat = async ({
     type,
@@ -47,15 +119,23 @@ const HomePage = (): React.ReactElement => {
     )
   }
 
-  useEffect(() => {
-    if (user !== null) {
-      console.log(user)
-    }
-  }, [user?.id])
+  // useEffect(() => {
+  //   if (
+  //     typeof profile?.first_name === 'undefined' ||
+  //     profile?.first_name === null ||
+  //     profile?.first_name === ''
+  //   ) {
+  //     // ask for first name
+  //   }
+  // }, [profile !== null])
 
   useEffect(() => {
-    console.log(session)
-  }, [session?.provider_token])
+    if (session !== null && greeting === '') {
+      greet().catch((error) => {
+        console.error(error)
+      })
+    }
+  }, [session?.provider_token, greeting])
 
   if (session !== null) {
     return (
@@ -65,6 +145,7 @@ const HomePage = (): React.ReactElement => {
         </nav>
         <div className="container">
           <div className="player">
+            <div className="greeting">{greeting}</div>
             <WebPlayer setOutput={setOutput} />
           </div>
           <div className="chat">
@@ -110,7 +191,7 @@ const HomePage = (): React.ReactElement => {
           specific testers.
         </strong>
       </p>
-      <Login />
+      <Login afterLogin={greet} />
       <div className="waitlist">
         <h2>Join the Waitlist</h2>
         <p>

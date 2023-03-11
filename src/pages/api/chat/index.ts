@@ -1,6 +1,6 @@
 import requestHandler from '../../../utils/requestHandler'
 
-import { chat } from '../../../services/chat'
+import { chat, agent } from '../../../services/chat'
 
 const sendChatRequest = async (req, res): Promise<void> => {
   const { type, input } = req.body
@@ -13,10 +13,8 @@ const sendChatRequest = async (req, res): Promise<void> => {
     case 'track': {
       const { song, artist } = input
 
-      console.log(song, artist)
-
       try {
-        const response = await chat({
+        const response = await agent({
           mode: 'Track',
           input: `${song as string} - ${artist as string}`
         })
@@ -25,14 +23,36 @@ const sendChatRequest = async (req, res): Promise<void> => {
 
         res.status(200).json({ message: 'Track Submitted', input, response })
       } catch (error) {
-        console.log(error)
+        console.error(error)
 
         res.status(500).json({ error })
       }
       break
     }
+    case 'chat':
     default:
-      res.status(400).json({ message: 'Invalid request', input })
+      try {
+        let chatInput = input
+
+        if (typeof input === 'string') {
+          chatInput = [
+            {
+              role: 'user',
+              content: input
+            }
+          ]
+        }
+
+        const response = await chat(chatInput)
+
+        console.log(response)
+
+        res.status(200).json({ message: 'Chat Submitted', input, response })
+      } catch (error) {
+        console.error(error)
+
+        res.status(500).json({ error })
+      }
   }
 }
 
