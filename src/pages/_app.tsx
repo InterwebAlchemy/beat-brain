@@ -4,7 +4,14 @@ import {
   SessionContextProvider,
   type Session
 } from '@supabase/auth-helpers-react'
+
 import { type AppProps } from 'next/app'
+
+import ChatContext from '../context/ChatContext'
+
+import { Conversation } from '../services/conversation/conversation'
+
+import { BEATBRAIN_PREAMBLE } from '../constants/prompts'
 
 import '../styles/base.css'
 
@@ -20,7 +27,12 @@ function BeatBrainApp({
     <SessionContextProvider
       supabaseClient={supabase}
       initialSession={pageProps.initialSession}>
-      <Component {...pageProps} />
+      <ChatContext.Provider
+        value={{
+          conversation: new Conversation({ preamble: BEATBRAIN_PREAMBLE })
+        }}>
+        <Component {...pageProps} />
+      </ChatContext.Provider>
     </SessionContextProvider>
   )
 }

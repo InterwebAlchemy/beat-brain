@@ -1,6 +1,6 @@
 import requestHandler from '../../../utils/requestHandler'
 
-import { chat, agent } from '../../../services/chat'
+import { chat, agent } from '../../../services/langchain'
 
 const sendChatRequest = async (req, res): Promise<void> => {
   const { type, input } = req.body

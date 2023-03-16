@@ -35,110 +35,54 @@ const SpotifyAnalysis = {
             const analysisDescription: string[] = []
 
             if (analysis.acousticness > 0.7) {
-              analysisDescription.push(
-                'This playlist should feature acoustic songs.'
-              )
+              analysisDescription.push('feature acoustic songs')
             } else if (analysis.acousticness > 0.3) {
-              analysisDescription.push(
-                'This playlist should not feature acoustic songs.'
-              )
-            } else {
-              analysisDescription.push(
-                'This playlist can include acoustic songs if they fit the theme.'
-              )
+              analysisDescription.push('not feature acoustic songs')
             }
 
             if (analysis.liveness > 0.7) {
-              analysisDescription.push(
-                'This playlist should feature live songs.'
-              )
+              analysisDescription.push('feature live songs')
             } else if (analysis.liveness > 0.3) {
-              analysisDescription.push(
-                'This playlist should not feature live songs.'
-              )
-            } else {
-              analysisDescription.push(
-                'This playlist can include live songs if they fit the theme.'
-              )
+              analysisDescription.push('not feature live songs')
             }
 
             if (analysis.instrumentalness > 0.7) {
-              analysisDescription.push(
-                'This playlist should feature instrumental songs.'
-              )
+              analysisDescription.push('feature instrumental songs')
             } else if (analysis.instrumentalness > 0.3) {
-              analysisDescription.push(
-                'This playlist should not feature instrumental songs.'
-              )
-            } else {
-              analysisDescription.push(
-                'This playlist can include instrumental songs if they fit the theme.'
-              )
+              analysisDescription.push('not feature instrumental songs')
             }
 
             if (analysis.speechiness > 0.7) {
-              analysisDescription.push(
-                'This playlist should feature songs with many lyrics.'
-              )
+              analysisDescription.push('feature lyrical songs')
             } else if (analysis.speechiness > 0.3) {
-              analysisDescription.push(
-                'This playlist should not feature songs with many lyrics.'
-              )
-            } else {
-              analysisDescription.push(
-                'This playlist can include songs with many lyrics if they fit the theme.'
-              )
+              analysisDescription.push('not feature lyrical songs')
             }
 
             if (analysis.danceability > 0.7) {
-              analysisDescription.push(
-                'This playlist should feature danceable songs.'
-              )
-              analysisDescription.push(
-                `This playlist should be around ${analysis.tempo} BPM.`
-              )
+              analysisDescription.push('feature danceable songs')
             } else if (analysis.danceability > 0.3) {
-              analysisDescription.push(
-                `This playlist should be around ${analysis.tempo} BPM.`
-              )
-              analysisDescription.push(
-                'This playlist should not feature danceable songs.'
-              )
-            } else {
-              analysisDescription.push(`This playlist can include any BPM.`)
-              analysisDescription.push(
-                'This playlist can include danceable songs if they fit the theme.'
-              )
+              analysisDescription.push('not feature danceable songs')
             }
 
             if (analysis.energy > 0.7) {
-              analysisDescription.push(
-                'This playlist should feature energetic songs.'
-              )
+              analysisDescription.push('feature energetic songs')
             } else if (analysis.energy > 0.3) {
-              analysisDescription.push(
-                'This playlist should not feature energetic songs.'
-              )
-            } else {
-              analysisDescription.push(
-                'This playlist can include energetic songs if they fit the theme.'
-              )
+              analysisDescription.push('not feature energetic songs')
             }
 
             if (analysis.valence > 0.7) {
               analysisDescription.push(
-                'This playlist should feature fun, happy, cheerful, euphoric, etc. songs.'
+                'be fun, happy, cheerful, euphoric, etc.'
               )
             } else if (analysis.valence > 0.3) {
-              analysisDescription.push(
-                'This playlist should feature moody, sad, depressed, angry, etc. songs.'
-              )
+              analysisDescription.push('be moody, sad, depressed, angry, etc.')
             }
 
             return `
 ${trackName as string} is available on Spotify.
 
-${analysisDescription.join('\n')}`
+This playlist should ${analysisDescription.join(', ')}
+`
           } catch (error) {
             console.error(error)
           }

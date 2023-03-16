@@ -1,94 +1,28 @@
-import React, { useEffect, useState } from 'react'
-
-import sampleSize from 'lodash.samplesize'
+import React from 'react'
 
 import { useSession } from '@supabase/auth-helpers-react'
 
+import type { CreateChatCompletionResponse } from 'openai'
+
+import useChat from '../hooks/useChat'
+
 import Login from '../components/Login'
 import WebPlayer from '../components/WebPlayer'
+import SidebarView from '../components/SidebarView'
+
+import fetchHandler from '../utils/fetchHandler'
 
 const HomePage = (): React.ReactElement => {
   const session = useSession()
 
-  const [greeting, setGreeting] = useState<string>('')
-  const [output, setOutput] = useState<Record<string, any> | null>(null)
-
-  const greet = async (): Promise<void> => {
-    console.log('trying to greet the user')
-    try {
-      const { details } = await fetch('/api/spotify/info').then(
-        async (response) => {
-          return await response.json()
-        }
-      )
-
-      console.log(details)
-
-      const input = [
-        {
-          role: 'user',
-          content: `Hey there! I'm ${details.me.display_name as string}.`
-        },
-        {
-          role: 'user',
-          content: `Some of my favorite artists are: ${
-            sampleSize(
-              details.topArtists.items
-                .filter(({ type }) => type === 'artists')
-                .map((artist) => artist.name)
-            ).join(', ') as string
-          }`
-        }
-      ]
-
-      if (
-        typeof details.currentTrack !== 'undefined' &&
-        details.currentTrack !== null &&
-        details.currentTrack !== '' &&
-        details.currentTrack?.currently_playing_type === 'track'
-      ) {
-        input.push({
-          role: 'user',
-          content: `I'm currently listening to ${
-            details.currentTrack.item.name as string
-          } by ${
-            details.currentTrack.item.artists
-              .map((artist) => artist.name)
-              .join(', ') as string
-          }.`
-        })
-      }
-
-      input.push({
-        role: 'system',
-        content: 'Greet the user.'
-      })
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          type: 'chat',
-          input
-        })
-      }).then(async (response) => await response.json())
-
-      console.log(response)
-
-      setGreeting(response.response.choices[0].message.content)
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  const { ready, conversation } = useChat()
 
   const sendChat = async ({
     type,
     input
   }: Record<string, string>): Promise<void> => {
-    try {
-      const response = await fetch('/api/chat', {
+    if (ready) {
+      fetchHandler<CreateChatCompletionResponse>('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -97,16 +31,23 @@ const HomePage = (): React.ReactElement => {
           type,
           input
         })
-      }).then(async (response) => await response.json())
-
-      setOutput(response.response.output)
-    } catch (error) {
-      console.error(error)
+      })
+        .then((response) => {
+          if (typeof response !== 'string') {
+            conversation?.addResponse(response)
+          } else {
+            console.error(response)
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
     }
   }
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
+
     const form = e.currentTarget
     const formData = new FormData(form)
     const type = formData.get('type')
@@ -119,24 +60,6 @@ const HomePage = (): React.ReactElement => {
     )
   }
 
-  // useEffect(() => {
-  //   if (
-  //     typeof profile?.first_name === 'undefined' ||
-  //     profile?.first_name === null ||
-  //     profile?.first_name === ''
-  //   ) {
-  //     // ask for first name
-  //   }
-  // }, [profile !== null])
-
-  useEffect(() => {
-    if (session !== null && greeting === '') {
-      greet().catch((error) => {
-        console.error(error)
-      })
-    }
-  }, [session?.provider_token, greeting])
-
   if (session !== null) {
     return (
       <div className="interface">
@@ -145,31 +68,25 @@ const HomePage = (): React.ReactElement => {
         </nav>
         <div className="container">
           <div className="player">
-            <div className="greeting">{greeting}</div>
-            <WebPlayer setOutput={setOutput} />
+            <WebPlayer />
           </div>
           <div className="chat">
-            {output !== null ? (
-              <div className="recommendations">
-                <h3>{output?.name}</h3>
-                <p>{output?.description}</p>
-                <ul>
-                  {output?.tracks.map((track) => (
-                    <li key={track}>{track}</li>
-                  ))}
-                </ul>
-                <p>{output?.notes}</p>
-              </div>
-            ) : (
-              <></>
-            )}
-            <form method="post" onSubmit={onSubmit}>
-              <select name="type">
+            <SidebarView />
+            <form
+              method="post"
+              onSubmit={onSubmit}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}>
+              <select name="type" disabled={!ready}>
                 <option value="track">Track</option>
                 <option value="mood">Mood</option>
               </select>
-              <input type="text" name="input" />
-              <button type="submit">Send</button>
+              <input type="text" name="input" disabled={!ready} />
+              <button type="submit" disabled={!ready}>
+                Send
+              </button>
             </form>
           </div>
         </div>
@@ -191,7 +108,7 @@ const HomePage = (): React.ReactElement => {
           specific testers.
         </strong>
       </p>
-      <Login afterLogin={greet} />
+      <Login />
       <div className="waitlist">
         <h2>Join the Waitlist</h2>
         <p>

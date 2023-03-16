@@ -41,6 +41,8 @@ export const agent = async (params): Promise<ChainValues> => {
   try {
     const response = await bot.call(params)
 
+    console.log(response)
+
     return response
   } catch (error) {
     console.error(error)

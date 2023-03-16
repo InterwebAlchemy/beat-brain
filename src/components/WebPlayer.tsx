@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useSession } from '@supabase/auth-helpers-react'
 
-import spotifyUriToUrl from '../utils/spotifyUriToUrl'
+import useChat from '../hooks/useChat'
 
-const WebPlayer = ({ setOutput }): React.ReactElement => {
+import spotifyUriToUrl from '../utils/spotifyUriToUrl'
+import formatArtistNames from '../utils/formatArtistNames'
+
+const WebPlayer = (): React.ReactElement => {
   const session = useSession()
+
+  const { getRecommendations } = useChat()
 
   const [isPaused, setIsPaused] = useState(true)
   const [isActive, setIsActive] = useState(false)
@@ -12,40 +17,23 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
   const [player, setPlayer] = useState<Spotify.Player>()
   const [currentTrack, setCurrentTrack] = useState<Spotify.Track>()
 
-  const sendChat = async ({
-    type,
-    input
-  }: Record<string, any>): Promise<void> => {
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+  const recommendationRequest = new AbortController()
+
+  const currentlyListeningTrackRecommendations = (): void => {
+    if (typeof currentTrack !== 'undefined' && currentTrack.type === 'track') {
+      getRecommendations(
+        {
+          type: 'track',
+          song: currentTrack.name,
+          artist: formatArtistNames(currentTrack.artists)
         },
-        body: JSON.stringify({
-          type,
-          input
-        })
-      }).then(async (response) => await response.json())
-
-      setOutput(JSON.parse(response.response.output))
-
-      console.log(response)
-    } catch (error) {
-      console.error(error)
+        {
+          signal: recommendationRequest.signal
+        }
+      ).catch((error) => {
+        console.error(error)
+      })
     }
-  }
-
-  const getRecommendations = (): void => {
-    sendChat({
-      type: 'track',
-      input: {
-        song: currentTrack?.name,
-        artist: currentTrack?.artists.map((artist) => artist.name).join(', ')
-      }
-    }).catch((error) => {
-      console.error(error)
-    })
   }
 
   const transferPlayback = (): void => {
@@ -120,6 +108,12 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
     }
   }, [session?.provider_token])
 
+  useEffect(() => {
+    return () => {
+      recommendationRequest.abort()
+    }
+  }, [])
+
   if (!isActive) {
     return (
       <div className="main-wrapper">
@@ -149,7 +143,7 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
             <button
               className="btn-recommendations"
               type="button"
-              onClick={getRecommendations}>
+              onClick={currentlyListeningTrackRecommendations}>
               Recommendations
             </button>
           ) : (

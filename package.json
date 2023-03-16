@@ -47,6 +47,7 @@
     "@commitlint/prompt-cli": "^17.4.4",
     "@semantic-release/changelog": "^6.0.2",
     "@semantic-release/git": "^10.0.1",
+    "@types/lodash.samplesize": "^4.2.7",
     "@types/node": "^18.14.6",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
@@ -69,6 +70,8 @@
     "yaml-lint": "^1.7.0"
   },
   "dependencies": {
+    "@agney/react-loading": "^0.1.2",
+    "@dqbd/tiktoken": "^0.4.0",
     "@supabase/auth-helpers-nextjs": "^0.5.6",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/auth-ui-react": "^0.3.5",
@@ -81,6 +84,8 @@
     "openai": "^3.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "spotify-web-api-ts": "^1.4.5"
+    "spotify-web-api-ts": "^1.4.5",
+    "use-debounce": "^9.0.3",
+    "uuid": "^9.0.0"
   }
 }

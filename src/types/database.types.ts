@@ -37,27 +37,30 @@ export interface Database {
       profiles: {
         Row: {
           avatar_url: string | null
+          bot_persona: string | null
           first_name: string | null
           id: string
+          last_seen: string | null
           updated_at: string | null
           username: string | null
-          website: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bot_persona?: string | null
           first_name?: string | null
           id: string
+          last_seen?: string | null
           updated_at?: string | null
           username?: string | null
-          website?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bot_persona?: string | null
           first_name?: string | null
           id?: string
+          last_seen?: string | null
           updated_at?: string | null
           username?: string | null
-          website?: string | null
         }
       }
     }

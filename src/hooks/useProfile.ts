@@ -6,49 +6,83 @@ import {
   useUser
 } from '@supabase/auth-helpers-react'
 
+import getUnixTimestamp from '../utils/getUnixTimestamp'
+
 import type { Database } from '../types/database.types'
 
 export type UserProfile = Pick<
   Database['public']['Tables']['profiles']['Row'],
-  'username' | 'avatar_url' | 'first_name'
+  'username' | 'avatar_url' | 'first_name' | 'last_seen' | 'bot_persona'
 >
 
 const useProfile = (): UserProfile | null => {
   const supabase = useSupabaseClient<Database>()
-  const session = useSession()
-  const user = useUser()
+  let session = useSession()
+  let user = useUser()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
 
-  const getUserProfile = async (userId): Promise<UserProfile | null> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`username, first_name, avatar_url`)
-      .eq('id', userId)
-      .limit(1)
-      .single()
+  const userRequest = new AbortController()
 
-    if (error !== null) {
-      console.error(error)
+  useEffect(() => {
+    if (session !== null) {
+      const aboutToExpiredOrAlreadyExpired =
+        typeof session?.expires_at !== 'undefined' &&
+        getUnixTimestamp() - 5000 >= session?.expires_at
+
+      if (aboutToExpiredOrAlreadyExpired) {
+        console.log('Session needs refreshing...')
+        supabase?.auth
+          ?.refreshSession(session)
+          .then((value) => {
+            const { data, error } = value
+
+            if (typeof error !== 'undefined' && error !== null) {
+              console.error(error)
+            }
+
+            session = data.session
+            user = data.user
+          })
+          .catch((error) => {
+            console.error(error)
+          })
+      }
     }
-
-    return data
-  }
+  }, [session?.provider_refresh_token])
 
   useEffect(() => {
     const sessionExists = typeof session !== 'undefined' && session !== null
     const userExists = typeof user !== 'undefined' && user !== null
 
     if (sessionExists && userExists) {
-      getUserProfile(user.id)
-        .then((profile) => {
-          setProfile(profile)
-        })
-        .catch((error) => {
-          console.error(error)
-        })
+      try {
+        /* eslint-disable @typescript-eslint/no-floating-promises */
+        supabase
+          .from('profiles')
+          .select(`username, first_name, avatar_url, last_seen, bot_persona`)
+          .abortSignal(userRequest.signal)
+          .eq('id', user?.id)
+          .limit(1)
+          .single()
+          .then(({ data, error }) => {
+            if (typeof error !== 'undefined') {
+              console.error(error)
+            }
+
+            console.log('profile', data)
+            setProfile(data)
+          })
+        /* eslint-enable @typescript-eslint/no-floating-promises */
+      } catch (error) {
+        console.error(error)
+      }
     }
-  }, [session?.access_token, user?.id])
+
+    return () => {
+      userRequest.abort()
+    }
+  }, [session?.access_token, user?.id, profile?.username])
 
   return profile
 }

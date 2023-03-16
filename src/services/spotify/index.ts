@@ -2,8 +2,12 @@ import { SpotifyWebApi } from 'spotify-web-api-ts'
 
 import type {
   Track,
-  CurrentlyPlaying
+  CurrentlyPlaying,
+  PrivateUser,
+  AudioAnalysis
 } from 'spotify-web-api-ts/types/types/SpotifyObjects'
+
+import type { GetMyTopArtistsResponse } from 'spotify-web-api-ts/types/types/SpotifyResponses'
 
 export interface GetTrackRequest {
   artist?: string
@@ -23,7 +27,7 @@ class Spotify {
     })
   }
 
-  async getMe(): Promise<any> {
+  async getMe(): Promise<PrivateUser> {
     const me = await this.api.users.getMe()
 
     return me
@@ -43,7 +47,7 @@ class Spotify {
     return track
   }
 
-  async getAudioAnalysis(trackId: string): Promise<any> {
+  async getAudioAnalysis(trackId: string): Promise<AudioAnalysis> {
     const analysis = await this.api.tracks.getAudioAnalysisForTrack(trackId)
 
     return analysis
@@ -74,13 +78,17 @@ class Spotify {
     return search.items[0]
   }
 
-  async getTopArtists(): Promise<any> {
+  async getTopArtists(): Promise<GetMyTopArtistsResponse> {
     const topArtists = await this.api.personalization.getMyTopArtists()
 
     return topArtists
   }
 
-  async getInitialDetails(): Promise<any> {
+  async getInitialDetails(): Promise<{
+    me: PrivateUser
+    topArtists: GetMyTopArtistsResponse
+    currentTrack: CurrentlyPlaying | string
+  }> {
     const [me, topArtists, currentTrack] = await Promise.all([
       this.getMe(),
       this.getTopArtists(),
