@@ -12,25 +12,30 @@ const formatRecommendationRequest = (
   switch (type) {
     case 'track':
       return {
-        content: `Track: ${song as string} - ${artist as string}`,
+        content: `<Track><Song>${song as string}</Song> - ${
+          artist
+            ?.split(', ')
+            .map((name) => `<Artist>${name}</Artist>`)
+            .join(', ') ?? ''
+        }</Track>`,
         role
       }
 
     case 'artist':
       return {
-        content: `Artist: ${artist as string}`,
+        content: `<Artist>${artist as string}</Artist>`,
         role
       }
 
     case 'mood':
       return {
-        content: `Mood: ${mood as string}`,
+        content: `<Mood>${mood as string}</Mood>`,
         role
       }
 
     default:
       return {
-        content: `Mood: ${[mood, artist, song].join(' ')}`,
+        content: `<Mood>${[mood, artist, song].join(' ')}</Mood>`,
         role
       }
   }

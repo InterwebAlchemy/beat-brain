@@ -30,7 +30,7 @@ CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
 
     const openai = new OpenAIApi(config)
 
-    console.log(messages)
+    // console.log(messages)
 
     const { maxTokens, modelName } = OPEN_AI_BOT_SETTINGS
 
@@ -44,8 +44,6 @@ CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
       messages,
       stream
     })
-
-    console.log(completion)
 
     return completion.data
   } catch (error) {

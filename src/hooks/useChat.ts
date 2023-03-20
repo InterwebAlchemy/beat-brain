@@ -36,7 +36,7 @@ const useChat = (): {
   getRecommendations: (
     request: RecommendationRequest,
     init?: RequestInit
-  ) => Promise<void>
+  ) => Promise<Record<string, any>>
 } => {
   const session = useSession()
 
@@ -52,13 +52,19 @@ const useChat = (): {
   const getRecommendations = async (
     request: RecommendationRequest,
     init: RequestInit = {}
-  ): Promise<void> => {
+  ): Promise<Record<string, any>> => {
+    let result = {}
+
     if (typeof conversation !== 'undefined' && conversation !== null) {
       const requestMessage = formatRecommendationRequest(request)
 
-      const message = conversation.addMessage({
-        message: requestMessage
-      })
+      const message = conversation.addMessage(
+        {
+          message: requestMessage
+        },
+        'default',
+        false
+      )
 
       const messages = conversation
         .getConversationMessages()
@@ -67,33 +73,42 @@ const useChat = (): {
       setReady(false)
 
       try {
-        const response = await fetchHandler<CreateChatCompletionResponse>(
-          '/api/beatbrain/recommendations',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              messages,
-              settings: conversation.settings
-            }),
-            ...init
-          }
-        )
+        const response = await fetchHandler<
+          CreateChatCompletionResponse & { playlist: Record<string, any> }
+        >('/api/beatbrain/recommendations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messages,
+            input: request,
+            settings: conversation.settings
+          }),
+          ...init
+        })
 
-        const responseMessage = conversation.addResponse(response)
+        conversation.addResponse(response, 'forgotten', false)
+
+        const { playlist } = response
+
+        conversation.addPlaylist(playlist)
 
         // we don't want to remember every recommendation because it would
         // pollute our memory context and wast tokens
         message.memoryState = 'forgotten'
-        responseMessage.memoryState = 'forgotten'
+
+        result = playlist
       } catch (error) {
         console.error(error)
+
+        result = error
       } finally {
         setReady(true)
       }
     }
+
+    return result
   }
 
   const executeConversation = async (init: RequestInit = {}): Promise<void> => {
@@ -150,16 +165,7 @@ const useChat = (): {
           {
             message: {
               role: 'user',
-              content: `
-ALWAYS follow the FORMATTING guidelines below.
-
-FORMATTING:
-
-1. Songs: <Song>{Song}</Song>
-2. Artists: <Artist>{Artist}</Artist>
-3. Tracks: <Track><Song>{Song}</Song> - <Artist>{Artist}</Artist></Track>
-4. Genres: <Genre>{Genre}</Genre>
-`
+              content: `Please always respond with only a Markdown codeblock containing valid JSON.`
             }
           },
           'core',
@@ -317,8 +323,6 @@ FORMATTING:
       profile !== null &&
       !ready
     ) {
-      console.log('START')
-
       if (!seeded.current) {
         seedUserDetails()
           .then(() => {

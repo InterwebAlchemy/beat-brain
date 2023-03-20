@@ -155,11 +155,11 @@ export class Conversation {
       // get formatted message text
       .map((message) => {
         if (message.message.role === 'user') {
-          return `${this.userHandle}: ${message.message.content}`
+          return `${this.userHandle}: ${message.message.content as string}`
         } else if (message.message.role === 'assistant') {
-          return `${this.botHandle}: ${message.message.content}`
+          return `${this.botHandle}: ${message.message.content as string}`
         } else {
-          return `${this.systemHandle}: ${message.message.content}`
+          return `${this.systemHandle}: ${message.message.content as string}`
         }
       })
 
@@ -213,6 +213,7 @@ export class Conversation {
       memoryState: 'system' as MemoryState,
       displayMessage: false,
       created: this.timestamp,
+      messageType: 'message',
       message: this.formatMessage({
         role: 'system',
         content: this.preamble
@@ -265,7 +266,10 @@ export class Conversation {
       memoryState,
       displayMessage,
       created: getUnixTimestamp(),
-      message: this.formatMessage(message?.message ?? {})
+      messageType: 'message',
+      message: this.formatMessage(
+        (message?.message as ChatCompletionRequestMessage) ?? {}
+      )
     }
 
     this.messages.push(conversationMessage)
@@ -285,6 +289,7 @@ export class Conversation {
       memoryState,
       displayMessage,
       created: getUnixTimestamp(),
+      messageType: 'message',
       message
     }
 
@@ -305,6 +310,7 @@ export class Conversation {
       created: response?.created ?? getUnixTimestamp(),
       memoryState,
       displayMessage,
+      messageType: 'message',
       message
     }
 
@@ -315,6 +321,27 @@ export class Conversation {
         conversationMessage.memoryState = memoryState ?? 'system'
         conversationMessage.displayMessage = false
       }
+    }
+
+    this.messages.push(conversationMessage)
+
+    return conversationMessage
+  }
+
+  addPlaylist(playlist: Record<string, any>): ConversationMessage {
+    const message = {
+      role: 'assistant' as ChatCompletionRequestMessage['role'],
+      content: playlist,
+      name: this.getMessageHandle({ role: 'assistant' })
+    }
+
+    const conversationMessage: ConversationMessage = {
+      id: uuidv4(),
+      memoryState: 'forgotten',
+      displayMessage: true,
+      created: getUnixTimestamp(),
+      messageType: 'playlist',
+      message
     }
 
     this.messages.push(conversationMessage)

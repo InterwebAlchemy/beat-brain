@@ -19,21 +19,31 @@ const WebPlayer = (): React.ReactElement => {
 
   const recommendationRequest = new AbortController()
 
-  const currentlyListeningTrackRecommendations = (): void => {
+  const currentlyListeningTrackRecommendations = async (): Promise<void> => {
     if (typeof currentTrack !== 'undefined' && currentTrack.type === 'track') {
-      getRecommendations(
-        {
-          type: 'track',
-          song: currentTrack.name,
-          artist: formatArtistNames(currentTrack.artists)
-        },
-        {
-          signal: recommendationRequest.signal
-        }
-      ).catch((error) => {
+      try {
+        const playlist = await getRecommendations(
+          {
+            type: 'track',
+            song: currentTrack.name,
+            artist: formatArtistNames(currentTrack.artists)
+          },
+          {
+            signal: recommendationRequest.signal
+          }
+        )
+
+        console.log(playlist)
+      } catch (error) {
         console.error(error)
-      })
+      }
     }
+  }
+
+  const onRecommendationClick = (): void => {
+    currentlyListeningTrackRecommendations().catch((error) => {
+      console.error(error)
+    })
   }
 
   const transferPlayback = (): void => {
@@ -47,7 +57,7 @@ const WebPlayer = (): React.ReactElement => {
       })
     })
       .then(async (response) => await response.json())
-      .then((data) => {
+      .then(() => {
         setIsActive(true)
       })
       .catch((error) => {
@@ -96,16 +106,6 @@ const WebPlayer = (): React.ReactElement => {
         console.error(error)
       })
     }
-
-    return (): void => {
-      if (typeof player !== 'undefined' && player !== null) {
-        player.removeListener('ready')
-        player.removeListener('not_ready')
-        player.removeListener('player_state_changed')
-
-        player.disconnect()
-      }
-    }
   }, [session?.provider_token])
 
   useEffect(() => {
@@ -143,7 +143,7 @@ const WebPlayer = (): React.ReactElement => {
             <button
               className="btn-recommendations"
               type="button"
-              onClick={currentlyListeningTrackRecommendations}>
+              onClick={onRecommendationClick}>
               Recommendations
             </button>
           ) : (

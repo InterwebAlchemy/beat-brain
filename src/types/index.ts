@@ -8,12 +8,19 @@ export type MemoryState =
   | 'system'
   | 'error'
 
+export interface ExtendedChatCompletionRequestMessage {
+  role: ChatCompletionRequestMessage['role']
+  name?: ChatCompletionRequestMessage['name']
+  content: Record<string, any>
+}
+
 export interface ConversationMessage {
   id: string
   memoryState: MemoryState
   displayMessage: boolean
   created: number
-  message: ChatCompletionRequestMessage
+  messageType: 'message' | 'playlist' | 'recommendation'
+  message: ChatCompletionRequestMessage | ExtendedChatCompletionRequestMessage
 }
 
 export interface BeatBrainPersona {
