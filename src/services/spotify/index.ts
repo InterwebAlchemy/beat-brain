@@ -190,17 +190,23 @@ class Spotify {
       const hasSong = typeof song !== 'undefined' || song === null
 
       if (hasArtist && hasSong) {
-        searchString = `${song} - ${artist}`
+        searchString = `track: ${song} artist: ${artist}`
       } else if (hasSong) {
-        searchString = song
+        searchString = `track: ${song}`
       } else if (hasArtist) {
-        searchString = artist
+        searchString = `artist: ${artist}`
       }
     }
 
     const search = await this.api.search.searchTracks(searchString, {
-      limit: 1
+      // HACK: for some reason a limit of 1 seems to pull up less reliable results
+      limit: 2,
+      market: 'US'
     })
+
+    // TODO: check artists and song title for result and make sure it isn't some
+    // remix that happened to show up in the results first - this happens a lot
+    // because the Spotify's Search API is not ideal
 
     return search.items[0]
   }

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import PlaylistTeaser from './PlaylistTeaser'
+
 import converstUnixTimestampToISODate from '../utils/getISODate'
 
 import type { ConversationMessage } from '../types'
@@ -20,19 +22,24 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
     const playlist = messageContent as Record<string, any>
     return (
       <div
-        className={`ai-research-assistant__conversation__item ai-research-assistant__conversation__item${
+        className={`conversation__item conversation__item${
           isUserMessage ? '--user' : '--bot'
         }`}>
-        <div className="ai-research-assistant__conversation__item__container">
-          <div className="ai-research-assistant__conversation__item__playlist">
-            {typeof playlist?.commentary?.intro !== 'undefined' &&
-            playlist?.commentary?.intro !== '' ? (
-              <p>{playlist.commentary.intro}</p>
+        <div className="conversation__item__container">
+          <div className="conversation__item__playlist">
+            {typeof playlist?.commentary?.[0] !== 'undefined' &&
+            playlist?.commentary?.[0] !== '' ? (
+              <p>{playlist.commentary[0]}</p>
             ) : (
               <></>
             )}
-            <h4>{playlist.name as string}</h4>
-            <p>{playlist.description as string}</p>
+
+            <PlaylistTeaser
+              name={playlist.name}
+              description={playlist.description}
+              tracks={playlist.tracks}
+            />
+
             <ol>
               {playlist.tracks.map((item, index) => (
                 <li key={item.spotifyId ?? index}>
@@ -45,29 +52,21 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
                 </li>
               ))}
             </ol>
-            {typeof playlist?.commentary?.notes !== 'undefined' &&
-            playlist?.commentary?.notes !== '' ? (
-              <p>{playlist.commentary.notes}</p>
-            ) : (
-              <></>
-            )}
-            {typeof playlist?.commentary?.outro !== 'undefined' &&
-            playlist?.commentary?.outro !== '' ? (
-              <p>{playlist.commentary.outro}</p>
-            ) : (
-              <></>
-            )}
+
+            {playlist?.commentary?.slice(1).map((item, index) => {
+              return <p key={index}>{item}</p>
+            })}
           </div>
         </div>
-        <div className="ai-research-assistant__conversation__item__footer">
+        <div className="conversation__item__footer">
           {isBotMessage || isUserMessage ? (
-            <div className="ai-research-assistant__conversation__item__speaker">
+            <div className="conversation__item__speaker">
               {message?.message?.name}
             </div>
           ) : (
             <></>
           )}
-          <div className="ai-research-assistant__conversation__item__timestamp">
+          <div className="conversation__item__timestamp">
             {converstUnixTimestampToISODate(message.created)}
           </div>
         </div>
@@ -76,23 +75,23 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
   } else {
     return messageContent !== '' ? (
       <div
-        className={`ai-research-assistant__conversation__item ai-research-assistant__conversation__item${
+        className={`conversation__item conversation__item${
           isUserMessage ? '--user' : '--bot'
         }`}>
-        <div className="ai-research-assistant__conversation__item__container">
-          <div className="ai-research-assistant__conversation__item__text">
+        <div className="conversation__item__container">
+          <div className="conversation__item__text">
             {messageContent.trim()}
           </div>
         </div>
-        <div className="ai-research-assistant__conversation__item__footer">
+        <div className="conversation__item__footer">
           {isBotMessage || isUserMessage ? (
-            <div className="ai-research-assistant__conversation__item__speaker">
+            <div className="conversation__item__speaker">
               {message?.message?.name}
             </div>
           ) : (
             <></>
           )}
-          <div className="ai-research-assistant__conversation__item__timestamp">
+          <div className="conversation__item__timestamp">
             {converstUnixTimestampToISODate(message.created)}
           </div>
         </div>

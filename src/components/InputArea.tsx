@@ -115,25 +115,25 @@ const InputArea = ({
 
     return (
       <div
-        className={`ai-research-assistant__input-area__toolbar${
+        className={`input-area__toolbar${
           typeof countAlign !== 'undefined'
-            ? ` ai-research-assistant__input-area__toolbar--${countAlign}`
+            ? ` input-area__toolbar--${countAlign}`
             : ''
         }${
           typeof countPosition !== 'undefined'
-            ? ` ai-research-assistant__input-area__toolbar--${countPosition}`
+            ? ` input-area__toolbar--${countPosition}`
             : ''
         }`}
         style={{
           flexDirection: countAlign === 'left' ? 'row' : 'row-reverse',
           textAlign: countAlign
         }}>
-        <div className="ai-research-assistant__input-area__toolbar__counter">
+        <div className="input-area__toolbar__counter">
           {count} {count === 1 ? countType.slice(0, -1) : countType}
         </div>
         {warning ? (
           <div
-            className="ai-research-assistant__input-area__counter__warning"
+            className="input-area__counter__warning"
             style={{ display: warning ? 'block' : 'none' }}>
             too many {countType}
           </div>
@@ -145,18 +145,16 @@ const InputArea = ({
   }
 
   return (
-    <div className="ai-research-assistant__input-area">
+    <div className="input-area">
       {countPosition === 'top' ? renderCount() : <></>}
       <div
-        className={`ai-research-assistant__input-area__input${
+        className={`input-area__input${
           typeof label !== 'undefined'
-            ? ` ai-research-assistant__input-area__input--label-${labelPosition}`
+            ? ` input-area__input--label-${labelPosition}`
             : ''
         }`}>
         {typeof label !== 'undefined' ? (
-          <label
-            className="ai-research-assistant__input-area__input__label"
-            htmlFor={id}>
+          <label className="input-area__input__label" htmlFor={id}>
             {label}
           </label>
         ) : (

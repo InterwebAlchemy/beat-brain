@@ -147,6 +147,8 @@ const getPlaylist = async (req, res): Promise<void> => {
 
     const suggestionMessage = response.choices[0].message
 
+    console.log(suggestionMessage)
+
     if (typeof suggestionMessage?.content === 'string') {
       const parsedContentWithOutExtraSpaces = suggestionMessage.content
         .replace(/\s\s+/g, ' ')

@@ -45,7 +45,7 @@ const SidebarView = (): React.ReactElement => {
   }, [ready])
 
   return (
-    <div className="ai-research-assistant-content__container">
+    <div className="chat-container">
       {conversation !== null ? (
         <ChatWindow messages={conversation.messages} />
       ) : (
