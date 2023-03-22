@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useSession } from '@supabase/auth-helpers-react'
 
-import spotifyUriToUrl from '../utils/spotifyUriToUrl'
+import useChat from '../hooks/useChat'
 
-const WebPlayer = ({ setOutput }): React.ReactElement => {
+import spotifyUriToUrl from '../utils/spotifyUriToUrl'
+import formatArtistNames from '../utils/formatArtistNames'
+
+const WebPlayer = (): React.ReactElement => {
   const session = useSession()
+
+  const { getRecommendations } = useChat()
 
   const [isPaused, setIsPaused] = useState(true)
   const [isActive, setIsActive] = useState(false)
@@ -12,38 +17,31 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
   const [player, setPlayer] = useState<Spotify.Player>()
   const [currentTrack, setCurrentTrack] = useState<Spotify.Track>()
 
-  const sendChat = async ({
-    type,
-    input
-  }: Record<string, any>): Promise<void> => {
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          type,
-          input
-        })
-      }).then(async (response) => await response.json())
+  const recommendationRequest = new AbortController()
 
-      setOutput(JSON.parse(response.response.output))
+  const currentlyListeningTrackRecommendations = async (): Promise<void> => {
+    if (typeof currentTrack !== 'undefined' && currentTrack.type === 'track') {
+      try {
+        const playlist = await getRecommendations(
+          {
+            type: 'track',
+            song: currentTrack.name,
+            artist: formatArtistNames(currentTrack.artists)
+          },
+          {
+            signal: recommendationRequest.signal
+          }
+        )
 
-      console.log(response)
-    } catch (error) {
-      console.error(error)
+        console.log(playlist)
+      } catch (error) {
+        console.error(error)
+      }
     }
   }
 
-  const getRecommendations = (): void => {
-    sendChat({
-      type: 'track',
-      input: {
-        song: currentTrack?.name,
-        artist: currentTrack?.artists.map((artist) => artist.name).join(', ')
-      }
-    }).catch((error) => {
+  const onRecommendationClick = (): void => {
+    currentlyListeningTrackRecommendations().catch((error) => {
       console.error(error)
     })
   }
@@ -59,7 +57,7 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
       })
     })
       .then(async (response) => await response.json())
-      .then((data) => {
+      .then(() => {
         setIsActive(true)
       })
       .catch((error) => {
@@ -88,67 +86,33 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
       setPlayer(player)
 
       player.addListener('ready', (playerInstance) => {
-        console.log('READY:', playerInstance)
-
         const { device_id: deviceId } = playerInstance
 
         setDeviceId(deviceId)
-
-        console.log('Device ID: ', deviceId)
       })
 
-      player.addListener('not_ready', (playerInstance) => {
-        console.log('NOT READY:', playerInstance)
-
-        const { device_id: deviceId } = playerInstance
-
+      player.addListener('not_ready', () => {
         setIsActive(false)
-
-        console.log(`Device ${deviceId} Disconnected...`)
       })
 
       player.addListener('player_state_changed', (state) => {
         if (typeof state !== 'undefined' && state !== null) {
           setCurrentTrack(state.track_window.current_track)
           setIsPaused(state.paused)
-
-          player
-            .getCurrentState()
-            .then((state) => {
-              console.log(state)
-            })
-            .catch((error) => {
-              console.error(error)
-            })
         }
       })
 
-      player
-        .connect()
-        .then(async (): Promise<void> => {
-          console.log('Web Player connected')
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    }
-
-    return (): void => {
-      if (typeof player !== 'undefined' && player !== null) {
-        player.removeListener('ready')
-        player.removeListener('not_ready')
-        player.removeListener('player_state_changed')
-
-        player.disconnect()
-      }
+      player.connect().catch((error) => {
+        console.error(error)
+      })
     }
   }, [session?.provider_token])
 
   useEffect(() => {
-    if (typeof currentTrack !== 'undefined' && currentTrack !== null) {
-      console.log(currentTrack)
+    return () => {
+      recommendationRequest.abort()
     }
-  }, [currentTrack?.id])
+  }, [])
 
   if (!isActive) {
     return (
@@ -179,7 +143,7 @@ const WebPlayer = ({ setOutput }): React.ReactElement => {
             <button
               className="btn-recommendations"
               type="button"
-              onClick={getRecommendations}>
+              onClick={onRecommendationClick}>
               Recommendations
             </button>
           ) : (

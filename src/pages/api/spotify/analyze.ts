@@ -7,8 +7,6 @@ const getCurrenltyPlayingTrack = async (req, res): Promise<void> => {
 
   const { trackId, song, artist, input } = req.body
 
-  console.log(accessToken, song, artist, trackId)
-
   const hasTrackId = typeof trackId !== 'undefined' && trackId !== null
 
   const spotify = new Spotify(accessToken)

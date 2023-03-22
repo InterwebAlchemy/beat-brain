@@ -93,3 +93,128 @@ body {
   height: 100%;
   object-fit: cover;
 }
+
+.playlist-teaser {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #f7f7f7;
+}
+
+.playlist-teaser__main {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 5px;
+  border-bottom: 1px solid #f7f7f7;
+}
+
+.playlist-teaser__thumbnail {
+  display: flex;
+}
+
+.playlist-teaser__details {
+  margin-left: 10px;
+}
+
+.playlist-teaser__name {
+  margin: 0 0 10px 0;
+}
+
+.playlist-teaser__toolbar__button--toggle {
+  margin-left: auto;
+}
+
+.playlist-teaser__extra {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.playlist-details {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.playlist-details--hidden {
+  display: none;
+}
+
+.playlist-details__tracks {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.playlist-details__tracks__list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.playlist-details__track {
+  margin-bottom: 10px;
+}
+
+.playlist-details__track:last-child {
+  margin-bottom: 0;
+}
+
+.playlist-details__track__button {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #f7f7f7;
+  text-align: left;
+}
+
+.playlist-details__track__button:hover {
+  cursor: pointer;
+  background-color: #676767;
+}
+
+.playlist-details__track__header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.playlist-details__track__info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
+}
+
+.playlist-details__track__info a {
+  text-decoration: none;
+  color: #f7f7f7;
+}
+
+.playlist-details__track__info a:hover,
+.playlist-details__track__info a:focus {
+  text-decoration: underline;
+}
+
+.playlist-details__track__number {
+  font-size: 1.4rem;
+  font-weight: normal;
+}
+
+.playlist-details__track__name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.playlist-details__track__artist {
+  font-size: 0.9rem;
+  font-weight: normal;
+  margin: 0;
+}

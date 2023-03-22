@@ -2,13 +2,17 @@ import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 
 import Spotify from '../services/spotify/auth'
 
-const Login = (): React.ReactElement => {
+export interface LoginProps {
+  afterLogin?: () => Promise<void>
+}
+
+const Login = ({ afterLogin }: LoginProps): React.ReactElement => {
   const session = useSession()
   const supabase = useSupabaseClient()
 
   const onClick = (): void => {
     handleAuthentication().catch((error) => {
-      console.log(error)
+      console.error(error)
     })
   }
 

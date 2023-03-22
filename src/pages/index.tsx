@@ -1,22 +1,28 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-import { useSession, useUser } from '@supabase/auth-helpers-react'
+import { useSession } from '@supabase/auth-helpers-react'
+
+import type { CreateChatCompletionResponse } from 'openai'
+
+import useChat from '../hooks/useChat'
 
 import Login from '../components/Login'
 import WebPlayer from '../components/WebPlayer'
+import SidebarView from '../components/SidebarView'
+
+import fetchHandler from '../utils/fetchHandler'
 
 const HomePage = (): React.ReactElement => {
   const session = useSession()
-  const user = useUser()
 
-  const [output, setOutput] = useState<Record<string, any> | null>(null)
+  const { ready, conversation } = useChat()
 
   const sendChat = async ({
     type,
     input
   }: Record<string, string>): Promise<void> => {
-    try {
-      const response = await fetch('/api/chat', {
+    if (ready) {
+      fetchHandler<CreateChatCompletionResponse>('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -25,16 +31,23 @@ const HomePage = (): React.ReactElement => {
           type,
           input
         })
-      }).then(async (response) => await response.json())
-
-      setOutput(response.response.output)
-    } catch (error) {
-      console.error(error)
+      })
+        .then((response) => {
+          if (typeof response !== 'string') {
+            conversation?.addResponse(response)
+          } else {
+            console.error(response)
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
     }
   }
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
+
     const form = e.currentTarget
     const formData = new FormData(form)
     const type = formData.get('type')
@@ -47,16 +60,6 @@ const HomePage = (): React.ReactElement => {
     )
   }
 
-  useEffect(() => {
-    if (user !== null) {
-      console.log(user)
-    }
-  }, [user?.id])
-
-  useEffect(() => {
-    console.log(session)
-  }, [session?.provider_token])
-
   if (session !== null) {
     return (
       <div className="interface">
@@ -65,30 +68,25 @@ const HomePage = (): React.ReactElement => {
         </nav>
         <div className="container">
           <div className="player">
-            <WebPlayer setOutput={setOutput} />
+            <WebPlayer />
           </div>
           <div className="chat">
-            {output !== null ? (
-              <div className="recommendations">
-                <h3>{output?.name}</h3>
-                <p>{output?.description}</p>
-                <ul>
-                  {output?.tracks.map((track) => (
-                    <li key={track}>{track}</li>
-                  ))}
-                </ul>
-                <p>{output?.notes}</p>
-              </div>
-            ) : (
-              <></>
-            )}
-            <form method="post" onSubmit={onSubmit}>
-              <select name="type">
+            <SidebarView />
+            <form
+              method="post"
+              onSubmit={onSubmit}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}>
+              <select name="type" disabled={!ready}>
                 <option value="track">Track</option>
                 <option value="mood">Mood</option>
               </select>
-              <input type="text" name="input" />
-              <button type="submit">Send</button>
+              <input type="text" name="input" disabled={!ready} />
+              <button type="submit" disabled={!ready}>
+                Send
+              </button>
             </form>
           </div>
         </div>

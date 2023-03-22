@@ -37,27 +37,79 @@ export interface Database {
       profiles: {
         Row: {
           avatar_url: string | null
+          bot_persona: string | null
           first_name: string | null
           id: string
+          last_seen: string | null
           updated_at: string | null
           username: string | null
-          website: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bot_persona?: string | null
           first_name?: string | null
           id: string
+          last_seen?: string | null
           updated_at?: string | null
           username?: string | null
-          website?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bot_persona?: string | null
           first_name?: string | null
           id?: string
+          last_seen?: string | null
           updated_at?: string | null
           username?: string | null
-          website?: string | null
+        }
+      }
+      spotify_entities: {
+        Row: {
+          archived: boolean | null
+          created_at: string | null
+          id: number
+          last_updated: string | null
+          name: string | null
+          spotify_entity_type_id: number
+          spotify_id: string | null
+        }
+        Insert: {
+          archived?: boolean | null
+          created_at?: string | null
+          id?: number
+          last_updated?: string | null
+          name?: string | null
+          spotify_entity_type_id: number
+          spotify_id?: string | null
+        }
+        Update: {
+          archived?: boolean | null
+          created_at?: string | null
+          id?: number
+          last_updated?: string | null
+          name?: string | null
+          spotify_entity_type_id?: number
+          spotify_id?: string | null
+        }
+      }
+      spotify_entity_types: {
+        Row: {
+          archived: boolean | null
+          created_at: string | null
+          id: number
+          name: string | null
+        }
+        Insert: {
+          archived?: boolean | null
+          created_at?: string | null
+          id?: number
+          name?: string | null
+        }
+        Update: {
+          archived?: boolean | null
+          created_at?: string | null
+          id?: number
+          name?: string | null
         }
       }
     }
