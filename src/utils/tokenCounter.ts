@@ -1,4 +1,4 @@
-import { get_encoding } from '@dqbd/tiktoken/dist/web/_tiktoken'
+import { get_encoding } from '@dqbd/tiktoken'
 
 const tokenCounter = (text: string): number => {
   // TODO: replace with model name once suport is ready
