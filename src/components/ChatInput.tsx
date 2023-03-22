@@ -30,7 +30,7 @@ const ChatInput = ({
 
   return (
     <form
-      className="ai-research-assistant__chat-form"
+      className="chat-form"
       onSubmit={onPromptSubmit}
       autoCapitalize="off"
       noValidate>
@@ -46,7 +46,7 @@ const ChatInput = ({
         a11yText="Send"
         buttonStyle="primary"
         type="submit"
-        className="ai-research-assistant__chat__input__send"
+        className="chat__input__send"
         disabled={busy}
         {...containerProps}>
         {indicatorEl}

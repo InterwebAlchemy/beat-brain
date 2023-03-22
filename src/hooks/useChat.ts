@@ -240,7 +240,10 @@ const useChat = (): {
           profile?.last_seen !== null
         ) {
           inputs.push(
-            `Last Seen: ${new Date(profile?.last_seen).toLocaleDateString()}.`
+            `Current Date: ${new Date().toLocaleDateString()}`,
+            `User Last Seen: ${new Date(
+              profile?.last_seen
+            ).toLocaleDateString()}`
           )
         }
 

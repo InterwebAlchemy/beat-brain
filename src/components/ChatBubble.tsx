@@ -3,6 +3,7 @@ import React from 'react'
 import PlaylistTeaser from './PlaylistTeaser'
 
 import converstUnixTimestampToISODate from '../utils/getISODate'
+import spotifyUriToUrl from '../utils/spotifyUriToUrl'
 
 import type { ConversationMessage } from '../types'
 
@@ -27,6 +28,10 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
         }`}>
         <div className="conversation__item__container">
           <div className="conversation__item__playlist">
+            <div className="playlist__description">{playlist.description}</div>
+
+            <PlaylistTeaser name={playlist.name} tracks={playlist.tracks} />
+
             {typeof playlist?.commentary?.[0] !== 'undefined' &&
             playlist?.commentary?.[0] !== '' ? (
               <p>{playlist.commentary[0]}</p>
@@ -34,23 +39,22 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
               <></>
             )}
 
-            <PlaylistTeaser
-              name={playlist.name}
-              description={playlist.description}
-              tracks={playlist.tracks}
-            />
-
             <ol>
-              {playlist.tracks.map((item, index) => (
-                <li key={item.spotifyId ?? index}>
-                  <strong>
-                    {item.song} - {item.artist}
-                  </strong>
-                  {typeof item?.notes !== 'undefined' && item.notes !== ''
-                    ? `: ${item.notes as string}`
-                    : ''}
-                </li>
-              ))}
+              {playlist.tracks.map((item, index) => {
+                return (
+                  <li key={item?.id ?? index}>
+                    <strong>
+                      <a
+                        href={spotifyUriToUrl(
+                          `spotify:track:${item.spotifyId as string}`
+                        )}>
+                        {item.song}
+                      </a>
+                    </strong>
+                    : {item.notes ?? 'No notes for this track'}
+                  </li>
+                )
+              })}
             </ol>
 
             {playlist?.commentary?.slice(1).map((item, index) => {

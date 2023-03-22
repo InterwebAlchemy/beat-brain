@@ -28,7 +28,7 @@ const ChatWindow = ({ messages = [] }: ChatWindowProps): React.ReactElement => {
 
   return (
     <div
-      className="ai-research-assistant__conversation"
+      className="conversation"
       // @ts-expect-error
       ref={scrollRef}>
       {renderConversation()}

@@ -17,6 +17,8 @@ const getPlaylist = async (req, res): Promise<void> => {
 
     let spotifyId: string | null = null
 
+    let artists: Array<{ name: string; id: string }> = []
+
     const trackName = `${input?.song as string} - ${input?.artist as string}`
 
     if (input.type === 'track') {
@@ -30,6 +32,39 @@ const getPlaylist = async (req, res): Promise<void> => {
 
         if (cachedItem !== null) {
           spotifyId = cachedItem.spotify_id
+
+          try {
+            artists = await Promise.all(
+              input?.artist?.split(', ').map(async (artist) => {
+                try {
+                  const cachedArtist = await spotify.checkEntityCache({
+                    entityName: artist,
+                    entityTypeId: await spotify.entityType('artist')
+                  })
+
+                  if (cachedArtist !== null) {
+                    return {
+                      name: cachedArtist.name ?? '',
+                      id: cachedArtist.spotify_id ?? ''
+                    }
+                  }
+                } catch (error) {
+                  console.error(error)
+
+                  // res.status(500).json(error)
+                }
+
+                return {
+                  name: '',
+                  id: ''
+                }
+              })
+            )
+          } catch (error) {
+            console.error(error)
+
+            // res.status(500).json(error)
+          }
         }
       } catch (error) {
         console.error(error)
@@ -63,6 +98,44 @@ const getPlaylist = async (req, res): Promise<void> => {
             }
 
             spotifyId = track.id
+
+            try {
+              await Promise.all(
+                track.artists.map(async (artist) => {
+                  try {
+                    artists.push({
+                      name: artist.name,
+                      id: artist.id
+                    })
+
+                    const { error } = await spotify.cache
+                      .upsert({
+                        spotify_id: artist.id,
+                        name: artist.name,
+                        spotify_entity_type_id: await spotify.entityType(
+                          'artist'
+                        )
+                        // last_updated: new Date().toISOString()
+                      })
+                      .select()
+
+                    if (typeof error !== 'undefined' && error !== null) {
+                      console.error(error)
+
+                      // res.status(500).json(error)
+                    }
+                  } catch (error) {
+                    console.error(error)
+
+                    // res.status(500).json(error)
+                  }
+                })
+              )
+            } catch (error) {
+              console.error(error)
+
+              // res.status(500).json(error)
+            }
           } catch (error) {
             console.error(error)
 
@@ -113,6 +186,13 @@ const getPlaylist = async (req, res): Promise<void> => {
 
         messages.push({
           role: 'system',
+          content: `Try to choose <Track />s from artists not in this list: ${artists
+            .map(({ name }) => `<Artist>${name}</Artist>`)
+            .join(', ')}`
+        })
+
+        messages.push({
+          role: 'system',
           content: `Audio Features for "${trackName}": ${Object.entries(
             analysis
           )
@@ -154,12 +234,16 @@ const getPlaylist = async (req, res): Promise<void> => {
         .replace(/\s\s+/g, ' ')
         .replace(/\r?\n|\r/g, '')
 
+      console.log(parsedContentWithOutExtraSpaces)
+
       try {
         const REGEX = /```json(\{.*\})?```/gim
 
         const matches = REGEX.exec(parsedContentWithOutExtraSpaces)
 
         const playlist = JSON.parse(matches?.[1] ?? '{}')
+
+        console.log(playlist)
 
         const { tracks } = playlist
 
@@ -178,10 +262,12 @@ const getPlaylist = async (req, res): Promise<void> => {
               artists?: Array<{ name: string; id: string }>
             }) => {
               const entityName = `${track?.song} - ${track?.artist}`
+
               if (entityName === trackName) {
                 return {
                   ...track,
-                  spotifyId
+                  spotifyId,
+                  artists
                 }
               } else {
                 try {
@@ -193,6 +279,29 @@ const getPlaylist = async (req, res): Promise<void> => {
                   // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
                   if (cachedItem !== null && cachedItem?.spotify_id !== null) {
                     track.spotifyId = cachedItem.spotify_id
+
+                    track.artists = track.artists ?? []
+
+                    // get cached artist ids
+                    track.artists = await Promise.all(
+                      track.artist.split(',').map(async (artist) => {
+                        const artistName = artist.trim()
+
+                        const cachedArtist = await spotify.checkEntityCache({
+                          entityName: artistName,
+                          entityTypeId: await spotify.entityType('artist')
+                        })
+
+                        if (cachedArtist !== null) {
+                          return {
+                            name: artistName ?? '',
+                            id: cachedArtist.spotify_id ?? ''
+                          }
+                        }
+
+                        return { name: '', id: '' }
+                      })
+                    )
                   }
 
                   if (
