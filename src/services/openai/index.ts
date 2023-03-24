@@ -34,18 +34,47 @@ CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
 
     const { maxTokens, modelName } = OPEN_AI_BOT_SETTINGS
 
-    const completion = await openai.createChatCompletion({
-      model: modelName ?? OPEN_AI_DEFAULT_MODEL_NAME,
-      max_tokens: maxTokens ?? max_tokens,
-      top_p,
-      frequency_penalty,
-      presence_penalty,
-      temperature,
-      messages,
-      stream
-    })
+    const completion = await openai.createChatCompletion(
+      {
+        model: modelName ?? OPEN_AI_DEFAULT_MODEL_NAME,
+        max_tokens: maxTokens ?? max_tokens,
+        top_p,
+        frequency_penalty,
+        presence_penalty,
+        temperature,
+        messages,
+        stream
+      },
+      stream === true ? { responseType: 'stream' } : { responseType: 'json' }
+    )
 
-    return completion.data
+    if (stream === true) {
+      // @ts-expect-error
+      completion.data?.on('data', (data) => {
+        const lines = data
+          .toString()
+          .split('\n')
+          .filter((line) => line.trim() !== '')
+
+        for (const line of lines) {
+          const message = line.replace(/^data: /, '')
+
+          if (message === '[DONE]') {
+            return // Stream finished
+          }
+
+          try {
+            const parsed = JSON.parse(message)
+
+            console.log(parsed.choices[0].text)
+          } catch (error) {
+            console.error('Could not JSON parse stream message', message, error)
+          }
+        }
+      })
+    } else {
+      return completion.data
+    }
   } catch (error) {
     if (typeof error?.response !== 'undefined') {
       console.error(error.response.status)

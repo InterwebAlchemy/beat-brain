@@ -7,7 +7,7 @@ const Spotify: SignInWithOAuthCredentials = {
   provider: 'spotify',
   options: {
     scopes: API_SCOPES.join(' '),
-    redirectTo: APPLICATION_URL
+    redirectTo: `${APPLICATION_URL ?? ''}/player`
   }
 }
 

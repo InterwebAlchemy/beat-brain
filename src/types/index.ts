@@ -1,5 +1,12 @@
 import type { ChatCompletionRequestMessage } from 'openai'
 
+import type { Database } from '../types/database.types'
+
+export type UserProfile = Pick<
+  Database['public']['Tables']['profiles']['Row'],
+  'username' | 'avatar_url' | 'first_name' | 'last_seen' | 'bot_persona'
+>
+
 export type MemoryState =
   | 'default'
   | 'core'

@@ -222,7 +222,8 @@ const getPlaylist = async (req, res): Promise<void> => {
       model: OPEN_AI_DEFAULT_MODEL_NAME,
       user: identifier,
       messages,
-      ...settings
+      ...settings,
+      stream: true
     })
 
     const suggestionMessage = response.choices[0].message

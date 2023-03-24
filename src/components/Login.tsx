@@ -1,12 +1,14 @@
+import React from 'react'
+
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
+
+import Image from 'next/image'
+
+import SpotifySVG from '../public/assets/img/spotify.svg'
 
 import Spotify from '../services/spotify/auth'
 
-export interface LoginProps {
-  afterLogin?: () => Promise<void>
-}
-
-const Login = ({ afterLogin }: LoginProps): React.ReactElement => {
+const Login = (): React.ReactElement => {
   const session = useSession()
   const supabase = useSupabaseClient()
 
@@ -25,7 +27,10 @@ const Login = ({ afterLogin }: LoginProps): React.ReactElement => {
   }
 
   return (
-    <button onClick={onClick}>{session !== null ? 'Log Out' : 'Log In'}</button>
+    <button onClick={onClick} className="button button__login">
+      <Image src={SpotifySVG} width="40" height="40" alt="" />
+      {session !== null ? 'Log Out' : 'Log In'}
+    </button>
   )
 }
 
