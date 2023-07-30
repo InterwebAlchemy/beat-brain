@@ -19,10 +19,6 @@ import ChatContext from '../context/ChatContext'
 
 import fetchHandler from '../utils/fetchHandler'
 
-import BEATBRAIN_PERSONAS, {
-  DEFAULT_PERSONA
-} from '../constants/prompts/personas'
-
 import type { Conversation } from '../services/conversation/conversation'
 
 import type { RecommendationRequest } from '../types'
@@ -161,21 +157,10 @@ const useChat = (): {
         conversation !== null &&
         !greeted.current
       ) {
-        conversation?.addMessage(
-          {
-            message: {
-              role: 'user',
-              content: `Please always respond with only a Markdown codeblock containing valid JSON.`
-            }
-          },
-          'core',
-          false
-        )
-
         const requestMessage = conversation.addMessage(
           {
             message: {
-              role: 'system',
+              role: 'user',
               content: `Hey there, ${BOT_HANDLE}!`
             }
           },
@@ -203,32 +188,6 @@ const useChat = (): {
         profile !== null &&
         !seeded.current
       ) {
-        let persona = DEFAULT_PERSONA
-
-        if (
-          profile?.bot_persona !== 'undefined' &&
-          profile.bot_persona !== null
-        ) {
-          const configuredPersona = BEATBRAIN_PERSONAS.find(
-            ({ id }) => id === profile.bot_persona
-          )
-
-          if (typeof configuredPersona !== 'undefined') {
-            persona = configuredPersona
-          }
-        }
-
-        conversation?.addMessage(
-          {
-            message: {
-              role: 'user',
-              content: persona.prompt
-            }
-          },
-          'core',
-          false
-        )
-
         const userName = profile?.first_name ?? (profile?.username as string)
 
         conversation?.setUserHandle(userName)
@@ -241,7 +200,7 @@ const useChat = (): {
         ) {
           inputs.push(
             `Current Date: ${new Date().toLocaleDateString()}`,
-            `User Last Seen: ${new Date(
+            `Last Listening Session: ${new Date(
               profile?.last_seen
             ).toLocaleDateString()}`
           )
@@ -273,7 +232,7 @@ const useChat = (): {
 
           const sampledArtists = sampleSize(
             details.topArtists.items.filter(({ type }) => type === 'artist'),
-            6
+            10
           )
 
           const artistNames = sampledArtists.map((artist) => artist.name.trim())
@@ -294,7 +253,7 @@ const useChat = (): {
             const { currentTrack } = details
 
             inputs.push(
-              `Currently Listening: ${
+              `Currently Playing: ${
                 currentTrack?.item?.name?.trim?.() as string
               } by ${(currentTrack?.item as Track)?.artists
                 .map((artist) => artist.name.trim())
@@ -329,6 +288,7 @@ const useChat = (): {
       if (!seeded.current) {
         seedUserDetails()
           .then(() => {
+            console.log('Seeding user details')
             seeded.current = true
 
             greetUser()
@@ -345,6 +305,7 @@ const useChat = (): {
       } else if (!greeted.current) {
         greetUser()
           .then(() => {
+            console.log('Greeting user')
             greeted.current = true
           })
           .catch((error) => {

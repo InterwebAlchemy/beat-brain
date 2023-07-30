@@ -96,6 +96,8 @@ const WebPlayer = (): React.ReactElement => {
       })
 
       player.addListener('player_state_changed', (state) => {
+        console.log(state)
+
         if (typeof state !== 'undefined' && state !== null) {
           setCurrentTrack(state.track_window.current_track)
           setIsPaused(state.paused)
@@ -113,6 +115,16 @@ const WebPlayer = (): React.ReactElement => {
       recommendationRequest.abort()
     }
   }, [])
+
+  useEffect(() => {
+    if (
+      typeof currentTrack !== 'undefined' &&
+      currentTrack !== null &&
+      currentTrack?.id !== null
+    ) {
+      console.log('PLAYING:', currentTrack)
+    }
+  }, [currentTrack?.id])
 
   if (!isActive) {
     return (

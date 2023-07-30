@@ -237,13 +237,11 @@ const getPlaylist = async (req, res): Promise<void> => {
       console.log(parsedContentWithOutExtraSpaces)
 
       try {
-        const REGEX = /```json(\{.*\})?```/gim
+        const REGEX = /(?:```)?\s*(?:json)?\s*(\{.*\})\s*(?:```)/gim
 
         const matches = REGEX.exec(parsedContentWithOutExtraSpaces)
 
         const playlist = JSON.parse(matches?.[1] ?? '{}')
-
-        console.log(playlist)
 
         const { tracks } = playlist
 
@@ -424,11 +422,7 @@ ${unavailableTracks
   )
   .join('\n')}
   
-Please recommend alternate tracks that are available on Spotify and would fit the theme of:
-
-<Playlist>${playlist?.name as string}</Playlist>.
-
-Provide your recommendations in a Markdown JSON codeblock, like:
+Recommend alternate tracks that are available on Spotify and would fit the theme:
 
 \`\`\`json
 {
