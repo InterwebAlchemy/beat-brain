@@ -5,6 +5,7 @@ import useChat from '../hooks/useChat'
 
 import spotifyUriToUrl from '../utils/spotifyUriToUrl'
 import formatArtistNames from '../utils/formatArtistNames'
+import fetchHandler from '../utils/fetchHandler'
 
 const WebPlayer = (): React.ReactElement => {
   const session = useSession()
@@ -18,6 +19,7 @@ const WebPlayer = (): React.ReactElement => {
   const [currentTrack, setCurrentTrack] = useState<Spotify.Track>()
 
   const recommendationRequest = new AbortController()
+  const queueTrackRequest = new AbortController()
 
   const currentlyListeningTrackRecommendations = async (): Promise<void> => {
     if (typeof currentTrack !== 'undefined' && currentTrack.type === 'track') {
@@ -32,6 +34,35 @@ const WebPlayer = (): React.ReactElement => {
             signal: recommendationRequest.signal
           }
         )
+
+        const { tracks } = playlist
+
+        if (tracks.length > 0) {
+          await Promise.all(
+            tracks.map(async (track) => {
+              const { spotifyUri } = track
+
+              console.log('QUEUING:', spotifyUri)
+
+              const queue = await fetchHandler('/api/spotify/queue', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  uri: spotifyUri
+                }),
+                signal: queueTrackRequest.signal
+              })
+
+              console.log('QUEUED:', spotifyUri)
+
+              return queue
+            })
+          )
+
+          console.log('QUEUED TRACKS')
+        }
 
         console.log(playlist)
       } catch (error) {
@@ -113,6 +144,7 @@ const WebPlayer = (): React.ReactElement => {
   useEffect(() => {
     return () => {
       recommendationRequest.abort()
+      queueTrackRequest.abort()
     }
   }, [])
 

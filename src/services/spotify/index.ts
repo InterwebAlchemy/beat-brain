@@ -168,6 +168,10 @@ class Spotify {
     return track
   }
 
+  async queueTrack(spotifyUri: string): Promise<void> {
+    await this.api.player.addToQueue(spotifyUri)
+  }
+
   async getAudioFeatures(trackId: string): Promise<AudioFeatures> {
     const features = await this.api.tracks.getAudioFeaturesForTrack(trackId)
 
@@ -190,11 +194,11 @@ class Spotify {
       const hasSong = typeof song !== 'undefined' || song === null
 
       if (hasArtist && hasSong) {
-        searchString = `track: ${song} artist: ${artist}`
+        searchString = `track:${song} artist:${artist}`
       } else if (hasSong) {
-        searchString = `track: ${song}`
+        searchString = `track:${song}`
       } else if (hasArtist) {
-        searchString = `artist: ${artist}`
+        searchString = `artist:${artist}`
       }
     }
 
@@ -209,6 +213,12 @@ class Spotify {
     // because the Spotify's Search API is not ideal
 
     return search.items[0]
+  }
+
+  async getTrackById(trackId: string): Promise<Track> {
+    const track = await this.api.tracks.getTrack(trackId)
+
+    return track
   }
 
   async getTopArtists(): Promise<GetMyTopArtistsResponse> {

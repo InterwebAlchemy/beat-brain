@@ -16,6 +16,7 @@ const getPlaylist = async (req, res): Promise<void> => {
     const spotify = new Spotify(accessToken)
 
     let spotifyId: string | null = null
+    let spotifyUri: string | null = null
 
     let artists: Array<{ name: string; id: string }> = []
 
@@ -98,6 +99,7 @@ const getPlaylist = async (req, res): Promise<void> => {
             }
 
             spotifyId = track.id
+            spotifyUri = track.uri
 
             try {
               await Promise.all(
@@ -181,6 +183,12 @@ const getPlaylist = async (req, res): Promise<void> => {
     }
 
     if (spotifyId !== null) {
+      if (typeof spotifyUri === 'undefined' || spotifyUri === null) {
+        const track = await spotify.getTrackById(spotifyId)
+
+        spotifyUri = track.uri
+      }
+
       try {
         const analysis = await spotify.getAudioFeatures(spotifyId)
 
@@ -257,6 +265,7 @@ const getPlaylist = async (req, res): Promise<void> => {
               song: string
               notes?: string
               spotifyId?: string
+              spotifyUri?: string
               artists?: Array<{ name: string; id: string }>
             }) => {
               const entityName = `${track?.song} - ${track?.artist}`
@@ -265,6 +274,7 @@ const getPlaylist = async (req, res): Promise<void> => {
                 return {
                   ...track,
                   spotifyId,
+                  spotifyUri,
                   artists
                 }
               } else {
@@ -336,6 +346,7 @@ const getPlaylist = async (req, res): Promise<void> => {
                         }
 
                         track.spotifyId = foundTrack.id
+                        track.spotifyUri = foundTrack.uri
                       } catch (error) {
                         console.error(error)
 
