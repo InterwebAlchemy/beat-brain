@@ -3,14 +3,46 @@ import {
   OpenAIApi,
   type CreateChatCompletionResponse,
   type CreateChatCompletionRequest
-} from 'openai'
+} from 'openai-edge'
 
 import {
   OPEN_AI_RESPONSE_TOKENS,
-  OPEN_AI_DEFAULT_TEMPERATURE,
-  OPEN_AI_BOT_SETTINGS,
-  OPEN_AI_DEFAULT_MODEL_NAME
+  OPEN_AI_DEFAULT_TEMPERATURE
 } from './constants'
+
+import functions from './functions'
+
+import { provideRecommendationFunctionName } from './functions/provideRecommendation'
+
+console.log(functions)
+
+export const getRecommendation = async ({
+  messages,
+  user = ''
+}): Promise<CreateChatCompletionResponse> => {
+  const config = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+
+  const openai = new OpenAIApi(config)
+
+  const completionResponse = await openai.createChatCompletion({
+    model: 'gpt-4',
+    temperature: 0.8,
+    stream: false,
+    user,
+    messages,
+    functions,
+    function_call: {
+      name: provideRecommendationFunctionName
+    }
+  })
+
+  const completion: CreateChatCompletionResponse =
+    await completionResponse.json()
+
+  return completion
+}
 
 export const openAICompletion = async ({
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -20,7 +52,7 @@ export const openAICompletion = async ({
   top_p = 1,
   frequency_penalty = 0,
   presence_penalty = 0,
-  stream = false
+  user = ''
 }: /* eslint-enable @typescript-eslint/naming-convention */
 CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
   try {
@@ -30,22 +62,21 @@ CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
 
     const openai = new OpenAIApi(config)
 
-    // console.log(messages)
-
-    const { maxTokens, modelName } = OPEN_AI_BOT_SETTINGS
-
-    const completion = await openai.createChatCompletion({
-      model: modelName ?? OPEN_AI_DEFAULT_MODEL_NAME,
-      max_tokens: maxTokens ?? max_tokens,
-      top_p,
-      frequency_penalty,
-      presence_penalty,
-      temperature,
+    const completionResponse = await openai.createChatCompletion({
+      model: 'gpt-4',
+      temperature: 0.8,
       messages,
-      stream
+      functions,
+      stream: false,
+      user
     })
 
-    return completion.data
+    const completion: CreateChatCompletionResponse =
+      await completionResponse.json()
+
+    console.log(completion)
+
+    return completion
   } catch (error) {
     if (typeof error?.response !== 'undefined') {
       console.error(error.response.status)

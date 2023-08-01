@@ -27,6 +27,7 @@ const WebPlayer = (): React.ReactElement => {
         const playlist = await getRecommendations(
           {
             type: 'track',
+            track: currentTrack,
             song: currentTrack.name,
             artist: formatArtistNames(currentTrack.artists)
           },

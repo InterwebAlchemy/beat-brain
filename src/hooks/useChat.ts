@@ -33,6 +33,7 @@ const useChat = (): {
     request: RecommendationRequest,
     init?: RequestInit
   ) => Promise<Record<string, any>>
+  getRecommendation: (track: Track, init?: RequestInit) => Promise<unknown>
 } => {
   const session = useSession()
 
@@ -44,6 +45,36 @@ const useChat = (): {
 
   const seeded = useRef(false)
   const greeted = useRef(false)
+
+  const getRecommendation = async (
+    track: Track,
+    init: RequestInit = {}
+  ): Promise<unknown> => {
+    if (typeof conversation !== 'undefined' && conversation !== null) {
+      const messages = conversation
+        .getConversationMessages()
+        .map(({ message }) => message)
+
+      const response = await fetchHandler<unknown>(
+        '/api/beatbrain/recommendation',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            track,
+            messages
+          }),
+          ...init
+        }
+      )
+
+      console.log(response)
+
+      return response
+    }
+  }
 
   const getRecommendations = async (
     request: RecommendationRequest,
@@ -328,7 +359,8 @@ const useChat = (): {
     ready,
     conversation,
     executeConversation,
-    getRecommendations
+    getRecommendations,
+    getRecommendation
   }
 }
 
