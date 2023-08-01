@@ -12,9 +12,7 @@ import {
 
 import functions from './functions'
 
-import { provideRecommendationFunctionName } from './functions/provideRecommendation'
-
-console.log(functions)
+import { getSpotifyTrackFunctionName } from './functions/getSpotifyTrack'
 
 export const getRecommendation = async ({
   messages,
@@ -34,7 +32,7 @@ export const getRecommendation = async ({
     messages,
     functions,
     function_call: {
-      name: provideRecommendationFunctionName
+      name: getSpotifyTrackFunctionName
     }
   })
 
