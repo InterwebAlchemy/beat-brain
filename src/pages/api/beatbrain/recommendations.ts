@@ -12,6 +12,8 @@ const getPlaylist = async (req, res): Promise<void> => {
     const { identifier, accessToken } = req
     const { messages, input } = req.body
 
+    console.log(req.body)
+
     const spotify = new Spotify(accessToken)
 
     let spotifyId: string | null = null
@@ -21,7 +23,7 @@ const getPlaylist = async (req, res): Promise<void> => {
 
     const trackName = `${input?.song as string} - ${input?.artist as string}`
 
-    if (input.type === 'track') {
+    if (input?.type === 'track') {
       const entityTypeId = await spotify.entityType('track')
 
       try {

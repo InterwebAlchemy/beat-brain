@@ -154,8 +154,8 @@ class Spotify {
     return me
   }
 
-  async startPlaying({ deviceId, track }): Promise<void> {
-    await this.api.player.play({ device_id: deviceId, uris: [track.uri] })
+  async startPlaying({ track }): Promise<void> {
+    await this.api.player.play({ uris: [track] })
   }
 
   async transferPlayback({ deviceId }): Promise<void> {

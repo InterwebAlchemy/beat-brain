@@ -51,13 +51,13 @@ const SidebarView = (): React.ReactElement => {
       ) : (
         <></>
       )}
-      <ChatInput
+      {/* <ChatInput
         prompt={prompt}
         onPromptChange={setPrompt}
         onPromptSubmit={handleSubmit}
         conversation={conversation}
         busy={loading}
-      />
+      /> */}
     </div>
   )
 }

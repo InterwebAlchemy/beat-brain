@@ -33,10 +33,6 @@ const useChat = (): {
     request: RecommendationRequest,
     init?: RequestInit
   ) => Promise<Record<string, any>>
-  getRecommendation: (
-    track: Spotify.Track,
-    init?: RequestInit
-  ) => Promise<unknown>
 } => {
   const session = useSession()
 
@@ -48,36 +44,6 @@ const useChat = (): {
 
   const seeded = useRef(false)
   const greeted = useRef(false)
-
-  const getRecommendation = async (
-    track: Spotify.Track,
-    init: RequestInit = {}
-  ): Promise<unknown> => {
-    if (typeof conversation !== 'undefined' && conversation !== null) {
-      const messages = conversation
-        .getConversationMessages()
-        .map(({ message }) => message)
-
-      const response = await fetchHandler<unknown>(
-        '/api/beatbrain/recommendation',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            track,
-            messages
-          }),
-          ...init
-        }
-      )
-
-      console.log('REC:', response)
-
-      return response
-    }
-  }
 
   const getRecommendations = async (
     request: RecommendationRequest,
@@ -181,64 +147,118 @@ const useChat = (): {
     }
   }
 
-  useEffect(() => {
-    const seedingRequest = new AbortController()
-    const greetingRequest = new AbortController()
+  const seedingRequest = new AbortController()
+  const greetingRequest = new AbortController()
 
-    const greetUser = async (): Promise<void> => {
+  const greetUser = async (): Promise<void> => {
+    if (
+      typeof conversation !== 'undefined' &&
+      conversation !== null &&
+      !greeted.current
+    ) {
+      const requestMessage = conversation.addMessage(
+        {
+          message: {
+            role: 'user',
+            content: `Hey there, ${BOT_HANDLE}!`
+          }
+        },
+        'default',
+        false
+      )
+
+      executeConversation({
+        signal: greetingRequest.signal
+      }).catch((error) => {
+        console.error(error)
+      })
+
+      requestMessage.memoryState = 'forgotten'
+    }
+  }
+
+  const seedUserDetails = async (): Promise<void> => {
+    if (
+      typeof session !== 'undefined' &&
+      session !== null &&
+      typeof conversation !== 'undefined' &&
+      conversation !== null &&
+      typeof profile !== 'undefined' &&
+      profile !== null &&
+      !seeded.current
+    ) {
+      const userName = profile?.first_name ?? (profile?.username as string)
+
+      conversation?.setUserHandle(userName)
+
+      const inputs: string[] = [`User: ${userName}`]
+
       if (
-        typeof conversation !== 'undefined' &&
-        conversation !== null &&
-        !greeted.current
+        typeof profile?.last_seen !== 'undefined' &&
+        profile?.last_seen !== null
       ) {
-        const requestMessage = conversation.addMessage(
-          {
-            message: {
-              role: 'user',
-              content: `Hey there, ${BOT_HANDLE}!`
-            }
-          },
-          'default',
-          false
+        inputs.push(
+          `Current Date: ${new Date().toLocaleDateString()}`,
+          `Last Listening Session: ${new Date(
+            profile?.last_seen
+          ).toLocaleDateString()}`
+        )
+      }
+
+      conversation?.addMessage(
+        {
+          message: {
+            role: 'system',
+            content: inputs.join('\n')
+          }
+        },
+        'core',
+        false
+      )
+
+      const { details } = await fetchHandler<{
+        details: {
+          me: PrivateUser
+          topArtists: GetMyTopArtistsResponse
+          currentTrack: CurrentlyPlaying | string
+        }
+      }>('/api/spotify/info', {
+        signal: seedingRequest.signal
+      })
+
+      if (typeof details !== 'undefined' && details !== null) {
+        const inputs: string[] = []
+
+        const sampledArtists = sampleSize(
+          details.topArtists.items.filter(({ type }) => type === 'artist'),
+          10
         )
 
-        executeConversation({
-          signal: greetingRequest.signal
-        }).catch((error) => {
-          console.error(error)
-        })
+        const artistNames = sampledArtists.map((artist) => artist.name.trim())
 
-        requestMessage.memoryState = 'forgotten'
-      }
-    }
+        inputs.push(`Favorite Artists: ${artistNames.join(', ')}`)
 
-    const seedUserDetails = async (): Promise<void> => {
-      if (
-        typeof session !== 'undefined' &&
-        session !== null &&
-        typeof conversation !== 'undefined' &&
-        conversation !== null &&
-        typeof profile !== 'undefined' &&
-        profile !== null &&
-        !seeded.current
-      ) {
-        const userName = profile?.first_name ?? (profile?.username as string)
-
-        conversation?.setUserHandle(userName)
-
-        const inputs: string[] = [`User: ${userName}`]
+        const genreNames = sampledArtists.map((artist) => artist.genres).flat()
 
         if (
-          typeof profile?.last_seen !== 'undefined' &&
-          profile?.last_seen !== null
+          typeof details.currentTrack !== 'undefined' &&
+          details.currentTrack !== null &&
+          details.currentTrack !== '' &&
+          typeof details.currentTrack !== 'string' &&
+          details.currentTrack?.currently_playing_type === 'track'
         ) {
+          const { currentTrack } = details
+
           inputs.push(
-            `Current Date: ${new Date().toLocaleDateString()}`,
-            `Last Listening Session: ${new Date(
-              profile?.last_seen
-            ).toLocaleDateString()}`
+            `Currently Playing: ${
+              currentTrack?.item?.name?.trim?.() as string
+            } by ${(currentTrack?.item as Track)?.artists
+              .map((artist) => artist.name.trim())
+              .join(', ')}.`
           )
         }
+
+        inputs.push(`Favorite Genres: ${genreNames.join(', ')}`)
 
         conversation?.addMessage(
           {
@@ -250,69 +270,13 @@ const useChat = (): {
           'core',
           false
         )
-
-        const { details } = await fetchHandler<{
-          details: {
-            me: PrivateUser
-            topArtists: GetMyTopArtistsResponse
-            currentTrack: CurrentlyPlaying | string
-          }
-        }>('/api/spotify/info', {
-          signal: seedingRequest.signal
-        })
-
-        if (typeof details !== 'undefined' && details !== null) {
-          const inputs: string[] = []
-
-          const sampledArtists = sampleSize(
-            details.topArtists.items.filter(({ type }) => type === 'artist'),
-            10
-          )
-
-          const artistNames = sampledArtists.map((artist) => artist.name.trim())
-
-          inputs.push(`Favorite Artists: ${artistNames.join(', ')}`)
-
-          const genreNames = sampledArtists
-            .map((artist) => artist.genres)
-            .flat()
-
-          if (
-            typeof details.currentTrack !== 'undefined' &&
-            details.currentTrack !== null &&
-            details.currentTrack !== '' &&
-            typeof details.currentTrack !== 'string' &&
-            details.currentTrack?.currently_playing_type === 'track'
-          ) {
-            const { currentTrack } = details
-
-            inputs.push(
-              `Currently Playing: ${
-                currentTrack?.item?.name?.trim?.() as string
-              } by ${(currentTrack?.item as Track)?.artists
-                .map((artist) => artist.name.trim())
-                .join(', ')}.`
-            )
-          }
-
-          inputs.push(`Favorite Genres: ${genreNames.join(', ')}`)
-
-          conversation?.addMessage(
-            {
-              message: {
-                role: 'system',
-                content: inputs.join('\n')
-              }
-            },
-            'core',
-            false
-          )
-        }
-      } else {
-        throw new Error('Could not seed conversation.')
       }
+    } else {
+      throw new Error('Could not seed conversation.')
     }
+  }
 
+  useEffect(() => {
     if (
       typeof conversation !== 'undefined' &&
       conversation !== null &&
@@ -347,23 +311,24 @@ const useChat = (): {
           })
       }
     }
-
-    return () => {
-      seedingRequest.abort()
-      greetingRequest.abort()
-    }
   }, [conversation?.id, profile?.username])
 
   useEffect(() => {
     setReady(greeted?.current && seeded?.current)
   }, [greeted, seeded])
 
+  useEffect(() => {
+    return () => {
+      seedingRequest.abort()
+      greetingRequest.abort()
+    }
+  })
+
   return {
     ready,
     conversation,
     executeConversation,
-    getRecommendations,
-    getRecommendation
+    getRecommendations
   }
 }
 
