@@ -10,10 +10,6 @@ import {
   OPEN_AI_DEFAULT_TEMPERATURE
 } from './constants'
 
-import functions from './functions'
-
-import { getSpotifyTrackFunctionName } from './functions/getSpotifyTrack'
-
 export const getRecommendation = async ({
   messages,
   user = ''
@@ -29,11 +25,7 @@ export const getRecommendation = async ({
     temperature: 0.8,
     stream: false,
     user,
-    messages,
-    functions,
-    function_call: {
-      name: getSpotifyTrackFunctionName
-    }
+    messages
   })
 
   const completion: CreateChatCompletionResponse =
@@ -64,7 +56,6 @@ CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
       model: 'gpt-4',
       temperature: 0.8,
       messages,
-      functions,
       stream: false,
       user
     })

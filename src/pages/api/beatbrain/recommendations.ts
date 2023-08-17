@@ -230,9 +230,11 @@ const getPlaylist = async (req, res): Promise<void> => {
       messages
     })
 
+    console.log(response)
+
     const suggestionMessage = response.choices[0].message
 
-    console.log(suggestionMessage)
+    console.log('SUGGESTION:', suggestionMessage)
 
     if (typeof suggestionMessage?.content === 'string') {
       const parsedContentWithOutExtraSpaces = suggestionMessage.content
@@ -422,14 +424,14 @@ const getPlaylist = async (req, res): Promise<void> => {
           messages.push({
             role: 'system',
             content: `The following tracks are unavailable:
-            
+
 ${unavailableTracks
   .map(
     (track: { artist: string; song: string }) =>
       `${track?.song} - ${track?.artist}`
   )
   .join('\n')}
-  
+
 Recommend alternate tracks that are available on Spotify and would fit the theme:
 
 \`\`\`json

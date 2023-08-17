@@ -33,7 +33,10 @@ const useChat = (): {
     request: RecommendationRequest,
     init?: RequestInit
   ) => Promise<Record<string, any>>
-  getRecommendation: (track: Track, init?: RequestInit) => Promise<unknown>
+  getRecommendation: (
+    track: Spotify.Track,
+    init?: RequestInit
+  ) => Promise<unknown>
 } => {
   const session = useSession()
 
@@ -47,7 +50,7 @@ const useChat = (): {
   const greeted = useRef(false)
 
   const getRecommendation = async (
-    track: Track,
+    track: Spotify.Track,
     init: RequestInit = {}
   ): Promise<unknown> => {
     if (typeof conversation !== 'undefined' && conversation !== null) {
@@ -70,7 +73,7 @@ const useChat = (): {
         }
       )
 
-      console.log(response)
+      console.log('REC:', response)
 
       return response
     }

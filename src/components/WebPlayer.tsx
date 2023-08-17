@@ -27,6 +27,8 @@ const WebPlayer = (): React.ReactElement => {
         const playlist = await getRecommendations(
           {
             type: 'track',
+            // TODO: figure out why this Track type is different
+            // @ts-expect-error
             track: currentTrack,
             song: currentTrack.name,
             artist: formatArtistNames(currentTrack.artists)
@@ -73,9 +75,9 @@ const WebPlayer = (): React.ReactElement => {
   }
 
   const onRecommendationClick = (): void => {
-    currentlyListeningTrackRecommendations().catch((error) => {
-      console.error(error)
-    })
+    // currentlyListeningTrackRecommendations().catch((error) => {
+    //   console.error(error)
+    // })
   }
 
   const transferPlayback = (): void => {
@@ -156,6 +158,10 @@ const WebPlayer = (): React.ReactElement => {
       currentTrack?.id !== null
     ) {
       console.log('PLAYING:', currentTrack)
+
+      currentlyListeningTrackRecommendations().catch((error) => {
+        console.error(error)
+      })
     }
   }, [currentTrack?.id])
 

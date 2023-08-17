@@ -4,7 +4,7 @@ export const getSpotifyTrackFunctionName = 'getSpotifyTrack'
 
 const getSpotifyTrackFunctionDefinition: ChatCompletionFunctions = {
   name: getSpotifyTrackFunctionName,
-  description: 'Get spotify link to track based on artist and song',
+  description: 'Get spotify link to a recommended track to give it to the user',
   parameters: {
     type: 'object',
     properties: {
