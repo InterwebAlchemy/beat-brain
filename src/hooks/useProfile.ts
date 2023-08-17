@@ -79,9 +79,9 @@ const useProfile = (): UserProfile | null => {
       }
     }
 
-    return () => {
-      userRequest.abort()
-    }
+    // return () => {
+    //   userRequest.abort()
+    // }
   }, [session?.access_token, user?.id, profile?.username])
 
   return profile

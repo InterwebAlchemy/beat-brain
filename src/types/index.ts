@@ -1,4 +1,5 @@
 import type { ChatCompletionRequestMessage } from 'openai'
+import type { Track } from 'spotify-web-api-ts/types/types/SpotifyObjects'
 
 export type MemoryState =
   | 'default'
@@ -31,6 +32,7 @@ export interface BeatBrainPersona {
 
 export interface RecommendationRequest {
   type: 'track' | 'artist' | 'mood'
+  track: Track
   artist?: string
   song?: string
   mood?: string

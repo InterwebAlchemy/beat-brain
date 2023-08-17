@@ -5,39 +5,46 @@ import type { RecommendationRequest } from '../types'
 const formatRecommendationRequest = (
   request: RecommendationRequest
 ): ChatCompletionRequestMessage => {
-  const { type, artist, song, mood } = request
-
   const role = 'user'
 
-  switch (type) {
-    case 'track':
-      return {
-        content: `<Track><Song>${song as string}</Song> - ${
-          artist
-            ?.split(', ')
-            .map((name) => `<Artist>${name}</Artist>`)
-            .join(', ') ?? ''
-        }</Track>`,
-        role
-      }
+  if (typeof request !== 'undefined') {
+    const { type, artist, song, mood } = request
 
-    case 'artist':
-      return {
-        content: `<Artist>${artist as string}</Artist>`,
-        role
-      }
+    switch (type) {
+      case 'track':
+        return {
+          content: `<Track><Song>${song as string}</Song> - ${
+            artist
+              ?.split(', ')
+              .map((name) => `<Artist>${name}</Artist>`)
+              .join(', ') ?? ''
+          }</Track>`,
+          role
+        }
 
-    case 'mood':
-      return {
-        content: `<Mood>${mood as string}</Mood>`,
-        role
-      }
+      case 'artist':
+        return {
+          content: `<Artist>${artist as string}</Artist>`,
+          role
+        }
 
-    default:
-      return {
-        content: `<Mood>${[mood, artist, song].join(' ')}</Mood>`,
-        role
-      }
+      case 'mood':
+        return {
+          content: `<Mood>${mood as string}</Mood>`,
+          role
+        }
+
+      default:
+        return {
+          content: `<Mood>${[mood, artist, song].join(' ')}</Mood>`,
+          role
+        }
+    }
+  } else {
+    return {
+      content: `<Track></Track>`,
+      role
+    }
   }
 }
 

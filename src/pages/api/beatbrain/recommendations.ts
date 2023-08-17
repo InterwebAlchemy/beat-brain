@@ -1,17 +1,18 @@
-import { openAICompletion } from '../../../services/openai'
+import { getRecommendation } from '../../../services/openai'
 import Spotify from '../../../services/spotify'
 
 import requestHandler from '../../../utils/requestHandler'
 
 import formatHandle from '../../../services/openai/utils/formatHandle'
 
-import { OPEN_AI_DEFAULT_MODEL_NAME } from '../../../services/openai/constants'
 import { SYSTEM_HANDLE } from '../../../constants'
 
 const getPlaylist = async (req, res): Promise<void> => {
   try {
     const { identifier, accessToken } = req
-    const { messages, settings, input } = req.body
+    const { messages, input } = req.body
+
+    console.log(req.body)
 
     const spotify = new Spotify(accessToken)
 
@@ -22,7 +23,7 @@ const getPlaylist = async (req, res): Promise<void> => {
 
     const trackName = `${input?.song as string} - ${input?.artist as string}`
 
-    if (input.type === 'track') {
+    if (input?.type === 'track') {
       const entityTypeId = await spotify.entityType('track')
 
       try {
@@ -194,7 +195,7 @@ const getPlaylist = async (req, res): Promise<void> => {
 
         messages.push({
           role: 'system',
-          content: `Try to choose <Track />s from artists not in this list: ${artists
+          content: `Try to choose a <Track> from an <Artist> not in this list: ${artists
             .map(({ name }) => `<Artist>${name}</Artist>`)
             .join(', ')}`
         })
@@ -226,16 +227,16 @@ const getPlaylist = async (req, res): Promise<void> => {
       }
     }
 
-    const response = await openAICompletion({
-      model: OPEN_AI_DEFAULT_MODEL_NAME,
+    const response = await getRecommendation({
       user: identifier,
-      messages,
-      ...settings
+      messages
     })
+
+    console.log(response)
 
     const suggestionMessage = response.choices[0].message
 
-    console.log(suggestionMessage)
+    console.log('SUGGESTION:', suggestionMessage)
 
     if (typeof suggestionMessage?.content === 'string') {
       const parsedContentWithOutExtraSpaces = suggestionMessage.content
@@ -425,14 +426,14 @@ const getPlaylist = async (req, res): Promise<void> => {
           messages.push({
             role: 'system',
             content: `The following tracks are unavailable:
-            
+
 ${unavailableTracks
   .map(
     (track: { artist: string; song: string }) =>
       `${track?.song} - ${track?.artist}`
   )
   .join('\n')}
-  
+
 Recommend alternate tracks that are available on Spotify and would fit the theme:
 
 \`\`\`json
