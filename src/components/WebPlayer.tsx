@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSession } from '@supabase/auth-helpers-react'
+import type { CurrentlyPlaying } from 'spotify-web-api-ts/types/types/SpotifyObjects'
 
 import useChat from '../hooks/useChat'
 
@@ -22,6 +23,7 @@ const WebPlayer = (): React.ReactElement => {
 
   const recommendationRequest = new AbortController()
   const queueTrackRequest = new AbortController()
+  const playTrackRequest = new AbortController()
 
   const currentlyListeningTrackRecommendations = async (): Promise<void> => {
     if (typeof currentTrack !== 'undefined' && currentTrack.type === 'track') {
@@ -49,16 +51,19 @@ const WebPlayer = (): React.ReactElement => {
 
               console.log('QUEUING:', spotifyUri)
 
-              const queue = await fetchHandler('/api/spotify/queue', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  uri: spotifyUri
-                }),
-                signal: queueTrackRequest.signal
-              })
+              const queue = await fetchHandler<CurrentlyPlaying | string>(
+                '/api/spotify/queue',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    uri: spotifyUri
+                  }),
+                  signal: queueTrackRequest.signal
+                }
+              )
 
               console.log('QUEUED:', spotifyUri)
 
@@ -83,8 +88,21 @@ const WebPlayer = (): React.ReactElement => {
       })
     })
       .then(async (response) => await response.json())
-      .then(() => {
+      .then((response) => {
+        console.log(response)
+        console.log(currentTrack)
+
         setIsActive(true)
+
+        // if (
+        //   typeof currentTrack === 'undefined' ||
+        //   currentTrack === null ||
+        //   (typeof currentTrack !== 'undefined' && currentTrack?.id === null)
+        // ) {
+        //   setInitialTrack().catch((error) => {
+        //     console.error(error)
+        //   })
+        // }
       })
       .catch((error) => {
         console.error(error)
@@ -94,11 +112,14 @@ const WebPlayer = (): React.ReactElement => {
   const setInitialTrack = async (): Promise<void> => {
     try {
       let track
+
       const playlist = await getRecommendations(track, {
         signal: recommendationRequest.signal
       })
 
       const { tracks } = playlist
+
+      console.log(tracks)
 
       if (tracks.length > 0) {
         const track = tracks[0]
@@ -116,8 +137,10 @@ const WebPlayer = (): React.ReactElement => {
             uri: spotifyUri,
             deviceId
           }),
-          signal: queueTrackRequest.signal
+          signal: playTrackRequest.signal
         })
+
+        setCurrentTrack(track)
       }
     } catch (error) {
       console.error(error)
@@ -151,6 +174,8 @@ const WebPlayer = (): React.ReactElement => {
       player.addListener('ready', (playerInstance) => {
         const { device_id: deviceId } = playerInstance
 
+        console.log(playerInstance)
+
         setDeviceId(deviceId)
       })
 
@@ -160,8 +185,6 @@ const WebPlayer = (): React.ReactElement => {
 
       player.addListener('player_state_changed', (state) => {
         if (typeof state !== 'undefined' && state !== null) {
-          console.log(state)
-
           setCurrentTrack(state.track_window.current_track)
           setIsPaused(state.paused)
         }
@@ -177,14 +200,16 @@ const WebPlayer = (): React.ReactElement => {
     return () => {
       recommendationRequest.abort()
       queueTrackRequest.abort()
+      playTrackRequest.abort()
     }
   }, [])
 
   // when the app loads, transfer playback
   useEffect(() => {
     if (ready) {
-      console.log('READY')
       if (!isActive) {
+        console.log('READY')
+
         transferPlayback()
       } else {
         if (
@@ -200,7 +225,7 @@ const WebPlayer = (): React.ReactElement => {
     } else {
       console.log('NOT READY')
     }
-  }, [ready, isActive, currentTrack?.id])
+  }, [ready, isActive])
 
   useEffect(() => {
     if (
@@ -217,31 +242,9 @@ const WebPlayer = (): React.ReactElement => {
     }
   }, [currentTrack?.id])
 
-  // if (!isActive) {
-  //   return (
-  //     <div className="main-wrapper">
-  //       <p>
-  //         Instance not active. Transfer your playback to{' '}
-  //         <strong>BeatBrain</strong> using your Spotify app
-  //       </p>
-  //       {typeof deviceId !== 'undefined' &&
-  //       deviceId !== null &&
-  //       deviceId !== '' ? (
-  //         <button
-  //           className="btn-transfer-playback"
-  //           type="button"
-  //           onClick={transferPlayback}>
-  //           Listen in BeatBrain
-  //         </button>
-  //       ) : (
-  //         <></>
-  //       )}
-  //     </div>
-  //   )
-  // } else {
   return (
     <div className="main-wrapper">
-      {/* <button
+      <button
         className="btn-spotify"
         onClick={() => {
           player?.previousTrack().catch((error) => {
@@ -269,7 +272,7 @@ const WebPlayer = (): React.ReactElement => {
           })
         }}>
         &gt;&gt;
-      </button> */}
+      </button>
       <div className="album-art">
         {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
           <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">

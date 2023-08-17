@@ -159,7 +159,17 @@ class Spotify {
   }
 
   async transferPlayback({ deviceId }): Promise<void> {
-    await this.api.player.transferPlayback(deviceId, { play: true })
+    try {
+      await this.api.player.pause()
+    } catch (error) {
+      console.error('Player is already paused')
+    }
+
+    try {
+      await this.api.player.transferPlayback(deviceId, { play: true })
+    } catch (error) {
+      console.error('Could not transfer playback')
+    }
   }
 
   async getCurrentlyPlaying(): Promise<CurrentlyPlaying | string> {

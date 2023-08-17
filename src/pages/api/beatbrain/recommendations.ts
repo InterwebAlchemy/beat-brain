@@ -3,9 +3,9 @@ import Spotify from '../../../services/spotify'
 
 import requestHandler from '../../../utils/requestHandler'
 
-import formatHandle from '../../../services/openai/utils/formatHandle'
+// import formatHandle from '../../../services/openai/utils/formatHandle'
 
-import { SYSTEM_HANDLE } from '../../../constants'
+// import { SYSTEM_HANDLE } from '../../../constants'
 
 const getPlaylist = async (req, res): Promise<void> => {
   try {
@@ -189,7 +189,7 @@ const getPlaylist = async (req, res): Promise<void> => {
       }
 
       try {
-        const analysis = await spotify.getAudioFeatures(spotifyId)
+        // const analysis = await spotify.getAudioFeatures(spotifyId)
 
         messages.push({
           role: 'system',
@@ -198,26 +198,26 @@ const getPlaylist = async (req, res): Promise<void> => {
             .join(', ')}`
         })
 
-        messages.push({
-          role: 'system',
-          content: `Audio Features for "${trackName}": ${Object.entries(
-            analysis
-          )
-            .filter(
-              ([key]) =>
-                ![
-                  'type',
-                  'id',
-                  'uri',
-                  'track_href',
-                  'analysis_url',
-                  'duration_ms'
-                ].includes(key)
-            )
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(' / ')}`,
-          name: formatHandle(SYSTEM_HANDLE)
-        })
+        // messages.push({
+        //   role: 'system',
+        //   content: `Audio Features for "${trackName}": ${Object.entries(
+        //     analysis
+        //   )
+        //     .filter(
+        //       ([key]) =>
+        //         ![
+        //           'type',
+        //           'id',
+        //           'uri',
+        //           'track_href',
+        //           'analysis_url',
+        //           'duration_ms'
+        //         ].includes(key)
+        //     )
+        //     .map(([key, value]) => `${key}: ${value}`)
+        //     .join(' / ')}`,
+        //   name: formatHandle(SYSTEM_HANDLE)
+        // })
       } catch (error) {
         console.error(error)
 
@@ -265,139 +265,138 @@ const getPlaylist = async (req, res): Promise<void> => {
               spotifyUri?: string
               artists?: Array<{ name: string; id: string }>
             }) => {
-              const entityName = `${track?.song} - ${track?.artist}`
+              // const entityName = `${track?.song} - ${track?.artist}`
 
-              if (entityName === trackName) {
-                return {
-                  ...track,
-                  spotifyId,
-                  spotifyUri,
-                  artists
+              // if (entityName === trackName) {
+              //   return {
+              //     ...track,
+              //     spotifyId,
+              //     spotifyUri,
+              //     artists
+              //   }
+              // } else {
+              try {
+                const cachedItem = await spotify.checkEntityCache({
+                  entityName: `${track?.song} - ${track?.artist}`,
+                  entityTypeId: await spotify.entityType('track')
+                })
+
+                // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+                if (cachedItem !== null && cachedItem?.spotify_id !== null) {
+                  track.spotifyId = cachedItem.spotify_id
+
+                  track.artists = track.artists ?? []
+
+                  // get cached artist ids
+                  track.artists = await Promise.all(
+                    track.artist.split(',').map(async (artist) => {
+                      const artistName = artist.trim()
+
+                      const cachedArtist = await spotify.checkEntityCache({
+                        entityName: artistName,
+                        entityTypeId: await spotify.entityType('artist')
+                      })
+
+                      if (cachedArtist !== null) {
+                        return {
+                          name: artistName ?? '',
+                          id: cachedArtist.spotify_id ?? ''
+                        }
+                      }
+
+                      return { name: '', id: '' }
+                    })
+                  )
                 }
-              } else {
-                try {
-                  const cachedItem = await spotify.checkEntityCache({
-                    entityName: `${track?.song} - ${track?.artist}`,
-                    entityTypeId: await spotify.entityType('track')
+
+                if (
+                  typeof track?.spotifyId === 'undefined' ||
+                  track?.spotifyId === null
+                ) {
+                  const foundTrack = await spotify.getTrack({
+                    artist: track?.artist,
+                    song: track?.song
                   })
 
-                  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-                  if (cachedItem !== null && cachedItem?.spotify_id !== null) {
-                    track.spotifyId = cachedItem.spotify_id
-
-                    track.artists = track.artists ?? []
-
-                    // get cached artist ids
-                    track.artists = await Promise.all(
-                      track.artist.split(',').map(async (artist) => {
-                        const artistName = artist.trim()
-
-                        const cachedArtist = await spotify.checkEntityCache({
-                          entityName: artistName,
-                          entityTypeId: await spotify.entityType('artist')
-                        })
-
-                        if (cachedArtist !== null) {
-                          return {
-                            name: artistName ?? '',
-                            id: cachedArtist.spotify_id ?? ''
-                          }
-                        }
-
-                        return { name: '', id: '' }
-                      })
-                    )
-                  }
-
                   if (
-                    typeof track?.spotifyId === 'undefined' ||
-                    track?.spotifyId === null
+                    typeof foundTrack !== 'undefined' &&
+                    foundTrack !== null
                   ) {
-                    const foundTrack = await spotify.getTrack({
-                      artist: track?.artist,
-                      song: track?.song
-                    })
+                    try {
+                      const { error } = await spotify.cache
+                        .upsert({
+                          spotify_id: foundTrack.id,
+                          name: `${foundTrack.name} - ${foundTrack.artists
+                            .map((artist) => artist.name)
+                            .join(', ')}`,
+                          spotify_entity_type_id: await spotify.entityType(
+                            'track'
+                          )
+                          // last_updated: new Date().toISOString(),
+                        })
+                        .select()
 
-                    if (
-                      typeof foundTrack !== 'undefined' &&
-                      foundTrack !== null
-                    ) {
-                      try {
-                        const { error } = await spotify.cache
-                          .upsert({
-                            spotify_id: foundTrack.id,
-                            name: `${foundTrack.name} - ${foundTrack.artists
-                              .map((artist) => artist.name)
-                              .join(', ')}`,
-                            spotify_entity_type_id: await spotify.entityType(
-                              'track'
-                            )
-                            // last_updated: new Date().toISOString(),
-                          })
-                          .select()
-
-                        if (typeof error !== 'undefined' && error !== null) {
-                          console.error(error)
-
-                          // res.status(500).json(error)
-                        }
-
-                        track.spotifyId = foundTrack.id
-                        track.spotifyUri = foundTrack.uri
-                      } catch (error) {
+                      if (typeof error !== 'undefined' && error !== null) {
                         console.error(error)
 
                         // res.status(500).json(error)
                       }
 
-                      try {
-                        track.artists = await Promise.all(
-                          foundTrack.artists.map(async (artist) => {
-                            try {
-                              const { error } = await spotify.cache
-                                .upsert({
-                                  spotify_id: artist.id,
-                                  name: artist.name,
-                                  spotify_entity_type_id:
-                                    await spotify.entityType('artist')
-                                  // last_updated: new Date().toISOString(),
-                                })
-                                .select()
+                      track.spotifyId = foundTrack.id
+                      track.spotifyUri = foundTrack.uri
+                    } catch (error) {
+                      console.error(error)
 
-                              if (
-                                typeof error !== 'undefined' &&
-                                error !== null
-                              ) {
-                                console.error(error)
+                      // res.status(500).json(error)
+                    }
 
-                                // res.status(500).json(error)
-                              }
-                            } catch (error) {
+                    try {
+                      track.artists = await Promise.all(
+                        foundTrack.artists.map(async (artist) => {
+                          try {
+                            const { error } = await spotify.cache
+                              .upsert({
+                                spotify_id: artist.id,
+                                name: artist.name,
+                                spotify_entity_type_id:
+                                  await spotify.entityType('artist')
+                                // last_updated: new Date().toISOString(),
+                              })
+                              .select()
+
+                            if (
+                              typeof error !== 'undefined' &&
+                              error !== null
+                            ) {
                               console.error(error)
 
                               // res.status(500).json(error)
                             }
+                          } catch (error) {
+                            console.error(error)
 
-                            return {
-                              name: artist.name,
-                              id: artist.id
-                            }
-                          })
-                        )
-                      } catch (error) {
-                        console.error(error)
+                            // res.status(500).json(error)
+                          }
 
-                        // res.status(500).json(error)
-                      }
+                          return {
+                            name: artist.name,
+                            id: artist.id
+                          }
+                        })
+                      )
+                    } catch (error) {
+                      console.error(error)
+
+                      // res.status(500).json(error)
                     }
                   }
-                } catch (error) {
-                  console.error(error)
-
-                  // res.status(500).json(error)
                 }
-              }
+              } catch (error) {
+                console.error(error)
 
+                // res.status(500).json(error)
+              }
+              // }
               return track
             }
           )
