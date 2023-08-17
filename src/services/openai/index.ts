@@ -63,15 +63,13 @@ CreateChatCompletionRequest): Promise<CreateChatCompletionResponse> => {
     const completion: CreateChatCompletionResponse =
       await completionResponse.json()
 
-    console.log(completion)
-
     return completion
   } catch (error) {
     if (typeof error?.response !== 'undefined') {
       console.error(error.response.status)
       console.error(error.response.data)
     } else {
-      console.log(error.message)
+      console.error(error.message)
     }
 
     throw error

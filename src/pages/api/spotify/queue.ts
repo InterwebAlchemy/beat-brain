@@ -7,8 +7,6 @@ const getRecentlyPlayedTracks = async (req, res): Promise<void> => {
 
   const { uri } = req.body
 
-  console.log(uri)
-
   const spotify = new Spotify(accessToken)
 
   await spotify.queueTrack(uri)

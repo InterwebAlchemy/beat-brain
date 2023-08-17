@@ -66,8 +66,6 @@ const useChat = (): {
         .getConversationMessages()
         .map(({ message }) => message)
 
-      setReady(false)
-
       try {
         const response = await fetchHandler<
           CreateChatCompletionResponse & { playlist: Record<string, any> }
@@ -99,8 +97,6 @@ const useChat = (): {
         console.error(error)
 
         result = error
-      } finally {
-        setReady(true)
       }
     }
 
@@ -112,8 +108,6 @@ const useChat = (): {
       const messages = conversation
         .getConversationMessages()
         .map(({ message }) => message)
-
-      setReady(false)
 
       try {
         const response = await fetchHandler<CreateChatCompletionResponse>(
@@ -135,14 +129,16 @@ const useChat = (): {
       } catch (error) {
         console.error(error)
 
-        conversation.addMessage({
-          message: {
-            role: 'system',
-            content: error.message
-          }
-        })
-      } finally {
-        setReady(true)
+        conversation.addMessage(
+          {
+            message: {
+              role: 'system',
+              content: error.message
+            }
+          },
+          'forgotten',
+          false
+        )
       }
     }
   }
@@ -314,8 +310,9 @@ const useChat = (): {
   }, [conversation?.id, profile?.username])
 
   useEffect(() => {
+    console.log(greeted.current, seeded.current)
     setReady(greeted?.current && seeded?.current)
-  }, [greeted, seeded])
+  }, [greeted?.current, seeded?.current])
 
   useEffect(() => {
     return () => {

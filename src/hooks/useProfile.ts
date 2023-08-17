@@ -22,8 +22,6 @@ const useProfile = (): UserProfile | null => {
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
 
-  const userRequest = new AbortController()
-
   useEffect(() => {
     if (session !== null) {
       const aboutToExpiredOrAlreadyExpired =
@@ -52,6 +50,8 @@ const useProfile = (): UserProfile | null => {
   }, [session?.provider_refresh_token])
 
   useEffect(() => {
+    const userRequest = new AbortController()
+
     const sessionExists = typeof session !== 'undefined' && session !== null
     const userExists = typeof user !== 'undefined' && user !== null
 
@@ -70,7 +70,6 @@ const useProfile = (): UserProfile | null => {
               console.error(error)
             }
 
-            console.log('profile', data)
             setProfile(data)
           })
         /* eslint-enable @typescript-eslint/no-floating-promises */
@@ -79,9 +78,9 @@ const useProfile = (): UserProfile | null => {
       }
     }
 
-    // return () => {
-    //   userRequest.abort()
-    // }
+    return () => {
+      userRequest.abort()
+    }
   }, [session?.access_token, user?.id, profile?.username])
 
   return profile

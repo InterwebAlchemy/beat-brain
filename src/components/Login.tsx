@@ -25,7 +25,9 @@ const Login = ({ afterLogin }: LoginProps): React.ReactElement => {
   }
 
   return (
-    <button onClick={onClick}>{session !== null ? 'Log Out' : 'Log In'}</button>
+    <button id="connect-button" onClick={onClick}>
+      {session !== null ? 'Disconnect' : 'Connect'}
+    </button>
   )
 }
 

@@ -7,6 +7,8 @@ import spotifyUriToUrl from '../utils/spotifyUriToUrl'
 import formatArtistNames from '../utils/formatArtistNames'
 import fetchHandler from '../utils/fetchHandler'
 
+import PlaylistTeaser from './PlaylistTeaser'
+
 const WebPlayer = (): React.ReactElement => {
   const session = useSession()
 
@@ -63,21 +65,11 @@ const WebPlayer = (): React.ReactElement => {
               return queue
             })
           )
-
-          console.log('QUEUED TRACKS')
         }
-
-        console.log(playlist)
       } catch (error) {
         console.error(error)
       }
     }
-  }
-
-  const onRecommendationClick = (): void => {
-    // currentlyListeningTrackRecommendations().catch((error) => {
-    //   console.error(error)
-    // })
   }
 
   const transferPlayback = (): void => {
@@ -121,13 +113,12 @@ const WebPlayer = (): React.ReactElement => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            uri: spotifyUri
+            uri: spotifyUri,
+            deviceId
           }),
           signal: queueTrackRequest.signal
         })
       }
-
-      console.log(playlist)
     } catch (error) {
       console.error(error)
     }
@@ -138,7 +129,11 @@ const WebPlayer = (): React.ReactElement => {
     script.src = 'https://sdk.scdn.co/spotify-player.js'
     script.async = true
 
-    if (session !== null) {
+    if (
+      session !== null &&
+      typeof session.provider_token !== 'undefined' &&
+      session.provider_token !== null
+    ) {
       document.body.appendChild(script)
     }
 
@@ -164,9 +159,9 @@ const WebPlayer = (): React.ReactElement => {
       })
 
       player.addListener('player_state_changed', (state) => {
-        console.log(state)
-
         if (typeof state !== 'undefined' && state !== null) {
+          console.log(state)
+
           setCurrentTrack(state.track_window.current_track)
           setIsPaused(state.paused)
         }
@@ -188,6 +183,7 @@ const WebPlayer = (): React.ReactElement => {
   // when the app loads, transfer playback
   useEffect(() => {
     if (ready) {
+      console.log('READY')
       if (!isActive) {
         transferPlayback()
       } else {
@@ -201,6 +197,8 @@ const WebPlayer = (): React.ReactElement => {
           })
         }
       }
+    } else {
+      console.log('NOT READY')
     }
   }, [ready, isActive, currentTrack?.id])
 
@@ -243,6 +241,35 @@ const WebPlayer = (): React.ReactElement => {
   // } else {
   return (
     <div className="main-wrapper">
+      {/* <button
+        className="btn-spotify"
+        onClick={() => {
+          player?.previousTrack().catch((error) => {
+            console.error(error)
+          })
+        }}>
+        &lt;&lt;
+      </button>
+
+      <button
+        className="btn-spotify"
+        onClick={() => {
+          player?.togglePlay().catch((error) => {
+            console.error(error)
+          })
+        }}>
+        {isPaused ? 'PLAY' : 'PAUSE'}
+      </button>
+
+      <button
+        className="btn-spotify"
+        onClick={() => {
+          player?.nextTrack().catch((error) => {
+            console.error(error)
+          })
+        }}>
+        &gt;&gt;
+      </button> */}
       <div className="album-art">
         {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
           <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
@@ -257,63 +284,35 @@ const WebPlayer = (): React.ReactElement => {
         )}
       </div>
 
-      <div className="now-playing__side">
-        {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
-          <div className="now-playing__name">
-            <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
-              {currentTrack.name}
-            </a>
-          </div>
-        ) : (
-          <></>
-        )}
-        {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
-          <div className="now-playing__artist">
-            {currentTrack.artists.map((artist, index) => {
-              return (
-                <React.Fragment key={artist.uri}>
-                  <a href={spotifyUriToUrl(artist.uri)} target="_blank">
-                    {artist.name}
-                  </a>
-                  {index !== currentTrack.artists.length - 1 ? ', ' : ''}
-                </React.Fragment>
-              )
-            })}
-          </div>
-        ) : (
-          <></>
-        )}
-
-        <button
-          className="btn-spotify"
-          onClick={() => {
-            player?.previousTrack().catch((error) => {
-              console.error(error)
-            })
-          }}>
-          &lt;&lt;
-        </button>
-
-        <button
-          className="btn-spotify"
-          onClick={() => {
-            player?.togglePlay().catch((error) => {
-              console.error(error)
-            })
-          }}>
-          {isPaused ? 'PLAY' : 'PAUSE'}
-        </button>
-
-        <button
-          className="btn-spotify"
-          onClick={() => {
-            player?.nextTrack().catch((error) => {
-              console.error(error)
-            })
-          }}>
-          &gt;&gt;
-        </button>
-      </div>
+      <PlaylistTeaser name="BeatBrain Recommends" tracks={[]}>
+        <div className="now-playing">
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <div className="now-playing__song">
+              <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
+                {currentTrack.name}
+              </a>
+            </div>
+          ) : (
+            <></>
+          )}
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <div className="now-playing__artist">
+              {currentTrack.artists.map((artist, index) => {
+                return (
+                  <React.Fragment key={artist.uri}>
+                    <a href={spotifyUriToUrl(artist.uri)} target="_blank">
+                      {artist.name}
+                    </a>
+                    {index !== currentTrack.artists.length - 1 ? ', ' : ''}
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          ) : (
+            <></>
+          )}
+        </div>
+      </PlaylistTeaser>
     </div>
   )
   // }

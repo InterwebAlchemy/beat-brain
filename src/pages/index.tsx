@@ -4,7 +4,7 @@ import { useSession } from '@supabase/auth-helpers-react'
 
 import Login from '../components/Login'
 import WebPlayer from '../components/WebPlayer'
-import SidebarView from '../components/SidebarView'
+// import SidebarView from '../components/SidebarView'
 
 const HomePage = (): React.ReactElement => {
   const session = useSession()
@@ -19,9 +19,9 @@ const HomePage = (): React.ReactElement => {
           <div className="player">
             <WebPlayer />
           </div>
-          <div className="chat">
+          {/* <div className="chat">
             <SidebarView />
-          </div>
+          </div> */}
         </div>
       </div>
     )

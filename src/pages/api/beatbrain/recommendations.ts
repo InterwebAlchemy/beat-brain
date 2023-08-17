@@ -12,8 +12,6 @@ const getPlaylist = async (req, res): Promise<void> => {
     const { identifier, accessToken } = req
     const { messages, input } = req.body
 
-    console.log(req.body)
-
     const spotify = new Spotify(accessToken)
 
     let spotifyId: string | null = null
@@ -232,8 +230,6 @@ const getPlaylist = async (req, res): Promise<void> => {
       messages
     })
 
-    console.log(response)
-
     const suggestionMessage = response.choices[0].message
 
     console.log('SUGGESTION:', suggestionMessage)
@@ -407,49 +403,7 @@ const getPlaylist = async (req, res): Promise<void> => {
           )
         )
 
-        const tracksAreAvailable: boolean = tracks.every(
-          (track: { spotifyId: string | null }) => spotifyId
-        )
-
-        if (!tracksAreAvailable) {
-          const unavailableTracks: Array<{
-            song: string
-            artist: string
-            spotifyId?: string
-          }> = tracks.filter(
-            (track: { spotifyId: string | null }) =>
-              typeof spotifyId === 'undefined' || spotifyId === null
-          )
-
-          console.log('UNAVAILABLE TRACKS', unavailableTracks)
-
-          messages.push({
-            role: 'system',
-            content: `The following tracks are unavailable:
-
-${unavailableTracks
-  .map(
-    (track: { artist: string; song: string }) =>
-      `${track?.song} - ${track?.artist}`
-  )
-  .join('\n')}
-
-Recommend alternate tracks that are available on Spotify and would fit the theme:
-
-\`\`\`json
-{
-  "tracks": [
-    { "artist": "Artist Name", "song": "Song Name", "notes": "Optional notes" }
-  ]
-}\`\`\``,
-            name: formatHandle(SYSTEM_HANDLE)
-          })
-
-          console.log(messages)
-        }
-
-        console.log('TRACKS ARE AVAILABLE', tracksAreAvailable)
-        // }
+        console.log(tracks)
 
         res.status(200).json({
           ...response,
