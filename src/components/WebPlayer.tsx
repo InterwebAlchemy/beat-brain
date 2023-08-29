@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react'
 import { useSession } from '@supabase/auth-helpers-react'
 import type { CurrentlyPlaying } from 'spotify-web-api-ts/types/types/SpotifyObjects'
 
+import Image from 'next/image'
+
 import useChat from '../hooks/useChat'
 
 import spotifyUriToUrl from '../utils/spotifyUriToUrl'
 import formatArtistNames from '../utils/formatArtistNames'
 import fetchHandler from '../utils/fetchHandler'
 
-import PlaylistTeaser from './PlaylistTeaser'
+import PlaylistDetails from './PlaylistDetails'
+
+import PlaylistThumbnail from '../public/assets/img/thumbnail.png'
 
 const WebPlayer = (): React.ReactElement => {
   const session = useSession()
@@ -20,6 +24,7 @@ const WebPlayer = (): React.ReactElement => {
   const [deviceId, setDeviceId] = useState<string>()
   const [player, setPlayer] = useState<Spotify.Player>()
   const [currentTrack, setCurrentTrack] = useState<Spotify.Track>()
+  const [showPlayer, setShowPlayer] = useState(true)
 
   const recommendationRequest = new AbortController()
   const queueTrackRequest = new AbortController()
@@ -147,6 +152,10 @@ const WebPlayer = (): React.ReactElement => {
     }
   }
 
+  const onSwap = (): void => {
+    setShowPlayer((showPlayer) => !showPlayer)
+  }
+
   useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://sdk.scdn.co/spotify-player.js'
@@ -196,14 +205,6 @@ const WebPlayer = (): React.ReactElement => {
     }
   }, [session?.provider_token])
 
-  useEffect(() => {
-    return () => {
-      recommendationRequest.abort()
-      queueTrackRequest.abort()
-      playTrackRequest.abort()
-    }
-  }, [])
-
   // when the app loads, transfer playback
   useEffect(() => {
     if (ready) {
@@ -225,6 +226,11 @@ const WebPlayer = (): React.ReactElement => {
     } else {
       console.log('NOT READY')
     }
+
+    return () => {
+      recommendationRequest.abort()
+      playTrackRequest.abort()
+    }
   }, [ready, isActive])
 
   useEffect(() => {
@@ -240,54 +246,62 @@ const WebPlayer = (): React.ReactElement => {
         console.error(error)
       })
     }
+
+    return () => {
+      queueTrackRequest.abort()
+    }
   }, [currentTrack?.id])
 
   return (
-    <div className="main-wrapper">
-      <button
-        className="btn-spotify"
-        onClick={() => {
-          player?.previousTrack().catch((error) => {
-            console.error(error)
-          })
-        }}>
-        &lt;&lt;
-      </button>
+    <div className="swap-wrapper">
+      <div
+        className={`main-wrapper main-wrapper--${
+          showPlayer ? 'foreground' : 'background'
+        }`}>
+        <div className="player-controls">
+          <button
+            className="btn-spotify"
+            onClick={() => {
+              player?.previousTrack().catch((error) => {
+                console.error(error)
+              })
+            }}>
+            &lt;&lt;
+          </button>
 
-      <button
-        className="btn-spotify"
-        onClick={() => {
-          player?.togglePlay().catch((error) => {
-            console.error(error)
-          })
-        }}>
-        {isPaused ? 'PLAY' : 'PAUSE'}
-      </button>
+          <button
+            className="btn-spotify"
+            onClick={() => {
+              player?.togglePlay().catch((error) => {
+                console.error(error)
+              })
+            }}>
+            {isPaused ? 'PLAY' : 'PAUSE'}
+          </button>
 
-      <button
-        className="btn-spotify"
-        onClick={() => {
-          player?.nextTrack().catch((error) => {
-            console.error(error)
-          })
-        }}>
-        &gt;&gt;
-      </button>
-      <div className="album-art">
-        {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
-          <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
-            <img
-              src={currentTrack.album.images[0].url}
-              className="now-playing__cover"
-              alt={`Album cover art for ${currentTrack.album.name}`}
-            />
-          </a>
-        ) : (
-          <></>
-        )}
-      </div>
-
-      <PlaylistTeaser name="BeatBrain Recommends" tracks={[]}>
+          <button
+            className="btn-spotify"
+            onClick={() => {
+              player?.nextTrack().catch((error) => {
+                console.error(error)
+              })
+            }}>
+            &gt;&gt;
+          </button>
+        </div>
+        <div className="album-art">
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
+              <img
+                src={currentTrack.album.images[0].url}
+                className="now-playing__cover"
+                alt={`Album cover art for ${currentTrack.album.name}`}
+              />
+            </a>
+          ) : (
+            <></>
+          )}
+        </div>
         <div className="now-playing">
           {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
             <div className="now-playing__song">
@@ -315,7 +329,23 @@ const WebPlayer = (): React.ReactElement => {
             <></>
           )}
         </div>
-      </PlaylistTeaser>
+      </div>
+      <div
+        className={`swap-button swap-button--${
+          showPlayer ? 'inactive' : 'active'
+        }`}>
+        <button onClick={onSwap} type="button">
+          <Image src={PlaylistThumbnail} alt="" width="90" height="90" />
+        </button>
+      </div>
+      <div
+        className={`beat-brain-container beat-brain-container--${
+          showPlayer ? 'background' : 'foreground'
+        }`}>
+        <div className="beta-brain-tracks">
+          <PlaylistDetails tracks={[]} visible={!showPlayer} />
+        </div>
+      </div>
     </div>
   )
   // }

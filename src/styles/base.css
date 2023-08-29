@@ -60,10 +60,49 @@ body {
 .player {
   width: 100%;
   height: 100%;
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.swap-wrapper {
+  position: relative;
+  min-width: 200px;
+  min-height: 200px;
+  max-width: 75%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-wrapper {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.main-wrapper--foreground {
+  transform: translate3d(0, 0, 1px);
+  box-shadow: 5px 5px 10px -5px #000000;
+  z-index: 1;
+}
+
+.main-wrapper--background {
+  transform: translate3d(10px, 10px, -1px);
+  z-index: -1;
+}
+
+.player-controls {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
 }
 
 .album-art {
@@ -72,9 +111,8 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-width: 300px;
-  min-height: 300px;
   background-color: #dcdcdc;
+  z-index: 1;
 }
 
 .album-art a {
@@ -88,12 +126,67 @@ body {
   object-fit: cover;
 }
 
+.now-playing {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 3;
+}
+
 .now-playing a {
   color: #f7f7f7;
 }
 
 .now-playing__song {
   font-size: 24px;
+}
+
+.swap-button {
+  position: absolute;
+  top: 20px;
+  left: calc(100% - 15px);
+  z-index: 0;
+  transition: all 0.3s ease;
+}
+
+.swap-button:hover {
+  left: 100%;
+}
+
+.swap-button--active {
+  left: 100%;
+}
+
+.swap-button > button {
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.beat-brain-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.beat-brain-container--foreground {
+  transform: translate3d(0, 0, 1px);
+  box-shadow: 5px 5px 10px -5px #000000;
+  z-index: 1;
+}
+
+.beat-brain-container--background {
+  transform: translate3d(10px, 10px, -1px);
+  z-index: -1;
 }
 
 .playlist-teaser {

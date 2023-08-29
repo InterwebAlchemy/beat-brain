@@ -307,19 +307,25 @@ const useChat = (): {
           })
       }
     }
-  }, [conversation?.id, profile?.username])
 
-  useEffect(() => {
-    console.log(greeted.current, seeded.current)
-    setReady(greeted?.current && seeded?.current)
-  }, [greeted?.current, seeded?.current])
-
-  useEffect(() => {
     return () => {
       seedingRequest.abort()
       greetingRequest.abort()
     }
-  })
+  }, [conversation?.id, profile?.username])
+
+  useEffect(() => {
+    console.log(greeted.current, seeded.current)
+
+    setReady(greeted?.current && seeded?.current)
+  }, [greeted?.current, seeded?.current])
+
+  // useEffect(() => {
+  //   return () => {
+  //     seedingRequest.abort()
+  //     greetingRequest.abort()
+  //   }
+  // })
 
   return {
     ready,
