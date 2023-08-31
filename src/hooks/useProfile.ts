@@ -6,6 +6,8 @@ import {
   useUser
 } from '@supabase/auth-helpers-react'
 
+import SpotifyAuthProvider from '../services/spotify/auth'
+
 import getUnixTimestamp from '../utils/getUnixTimestamp'
 
 import type { Database } from '../types/database.types'
@@ -17,8 +19,8 @@ export type UserProfile = Pick<
 
 const useProfile = (): UserProfile | null => {
   const supabase = useSupabaseClient<Database>()
-  let session = useSession()
-  let user = useUser()
+  const session = useSession()
+  const user = useUser()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
 
@@ -28,26 +30,37 @@ const useProfile = (): UserProfile | null => {
         typeof session?.expires_at !== 'undefined' &&
         getUnixTimestamp() - 5000 >= session?.expires_at
 
-      if (aboutToExpiredOrAlreadyExpired) {
-        console.log('Session needs refreshing...')
+      const missingProviderToken =
+        typeof session?.provider_token === 'undefined' ||
+        session?.provider_token === null ||
+        session?.provider_token === ''
+
+      if (aboutToExpiredOrAlreadyExpired || missingProviderToken) {
         supabase?.auth
           ?.refreshSession(session)
           .then((value) => {
-            const { data, error } = value
+            const { error } = value
 
             if (typeof error !== 'undefined' && error !== null) {
               console.error(error)
+            } else {
+              supabase.auth
+                .signInWithOAuth(SpotifyAuthProvider)
+                .catch((error) => {
+                  console.error('could not log in', error)
+                })
             }
-
-            session = data.session
-            user = data.user
           })
           .catch((error) => {
             console.error(error)
           })
       }
+    } else {
+      supabase.auth.signInWithOAuth(SpotifyAuthProvider).catch((error) => {
+        console.error('could not log in', error)
+      })
     }
-  }, [session?.provider_refresh_token])
+  }, [session?.access_token])
 
   useEffect(() => {
     const userRequest = new AbortController()
@@ -62,7 +75,7 @@ const useProfile = (): UserProfile | null => {
           .from('profiles')
           .select(`username, first_name, avatar_url, last_seen, bot_persona`)
           .abortSignal(userRequest.signal)
-          .eq('id', user?.id)
+          .eq('id', user?.id ?? '')
           .limit(1)
           .single()
           .then(({ data, error }) => {

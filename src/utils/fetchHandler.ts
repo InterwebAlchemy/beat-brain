@@ -1,9 +1,27 @@
+import { APPLICATION_URL } from '../constants'
+
 const fetchHandler = async <T = string>(
-  input: RequestInfo | URL,
-  init?: RequestInit | undefined
+  input: string | URL,
+  init?: (RequestInit & { query?: Record<string, string> }) | undefined
 ): Promise<T> => {
   try {
-    const response = await fetch(input, {
+    let url
+
+    try {
+      url = new URL(input.toString())
+    } catch (error) {
+      console.error(error)
+
+      url = new URL(input.toString(), APPLICATION_URL)
+    }
+
+    if (typeof init?.query !== 'undefined') {
+      Object.entries(init.query).forEach(([key, value]) => {
+        url.searchParams.append(key, value)
+      })
+    }
+
+    const response = await fetch(url, {
       ...init,
       next: {
         revalidate: 60,

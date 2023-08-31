@@ -1,5 +1,4 @@
 import React from 'react'
-import Script from 'next/script'
 import { useSession } from '@supabase/auth-helpers-react'
 
 import Login from '../components/Login'
@@ -22,7 +21,6 @@ const HomePage = (): React.ReactElement => {
           </div>
         </div>
       </div>
-      <Script src="https://sdk.scdn.co/spotify-player.js" async />
     </>
   )
 }

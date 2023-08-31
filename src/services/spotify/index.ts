@@ -1,14 +1,14 @@
-import { SpotifyWebApi } from 'spotify-web-api-ts'
-
-import type {
-  Track,
-  CurrentlyPlaying,
-  PrivateUser,
-  AudioAnalysis,
-  AudioFeatures
-} from 'spotify-web-api-ts/types/types/SpotifyObjects'
-
-import type { GetMyTopArtistsResponse } from 'spotify-web-api-ts/types/types/SpotifyResponses'
+import {
+  SpotifyApi,
+  type AccessToken,
+  type Artist,
+  type Queue,
+  type User,
+  type PlaybackState,
+  type ItemTypes,
+  type Track,
+  type Page
+} from '@spotify/web-api-ts-sdk'
 
 import type { PostgrestQueryBuilder } from '@supabase/postgrest-js'
 
@@ -44,7 +44,7 @@ const getEntityTypes = async (): Promise<Record<string, number>> => {
 }
 
 class Spotify {
-  api: SpotifyWebApi
+  api: SpotifyApi
 
   cache: PostgrestQueryBuilder<
     Database['public'],
@@ -53,13 +53,12 @@ class Spotify {
 
   entityTypes: Record<string, number> | null = null
 
-  constructor(accessToken) {
-    this.api = new SpotifyWebApi({
-      accessToken,
-      clientId: process.env.SPOTIFY_CLIENT_ID,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      redirectUri: process.env.NEXTAUTH_URL
-    })
+  constructor(token: AccessToken) {
+    this.api = SpotifyApi.withAccessToken(
+      process.env.SPOTIFY_CLIENT_ID ?? '',
+      token,
+      {}
+    )
 
     this.cache = supabase.from('spotify_entities')
   }
@@ -148,111 +147,111 @@ class Spotify {
     return null
   }
 
-  async getMe(): Promise<PrivateUser> {
-    const me = await this.api.users.getMe()
+  async getMe(): Promise<User> {
+    const me = await this.api.currentUser.profile()
 
     return me
   }
 
   async startPlaying({ track, deviceId }): Promise<void> {
-    await this.api.player.play({ device_id: deviceId, uris: [track] })
+    await this.api.player.startResumePlayback(deviceId, track)
   }
 
   async transferPlayback({ deviceId }): Promise<void> {
     try {
-      await this.api.player.pause()
+      await this.api.player.pausePlayback(deviceId)
     } catch (error) {
       console.error('Player is already paused')
     }
 
     try {
-      await this.api.player.transferPlayback(deviceId, { play: true })
+      await this.api.player.transferPlayback(deviceId, true)
     } catch (error) {
       console.error('Could not transfer playback')
     }
   }
 
-  async getCurrentlyPlaying(): Promise<CurrentlyPlaying | string> {
+  async getCurrentlyPlaying(): Promise<PlaybackState | string> {
     const track = await this.api.player.getCurrentlyPlayingTrack()
 
     return track
   }
 
+  async getQueue(): Promise<Queue> {
+    const queue = await this.api.player.getUsersQueue()
+
+    return queue
+  }
+
   async queueTrack(spotifyUri: string): Promise<void> {
-    await this.api.player.addToQueue(spotifyUri)
+    await this.api.player.addItemToPlaybackQueue(spotifyUri)
   }
 
-  async getAudioFeatures(trackId: string): Promise<AudioFeatures> {
-    const features = await this.api.tracks.getAudioFeaturesForTrack(trackId)
-
-    return features
-  }
-
-  async getAudioAnalysis(trackId: string): Promise<AudioAnalysis> {
-    const analysis = await this.api.tracks.getAudioAnalysisForTrack(trackId)
-
-    return analysis
-  }
-
-  async getTrack({ artist, song, input }: GetTrackRequest): Promise<Track> {
+  async getTrack({
+    artist = '',
+    song = '',
+    input = ''
+  }: GetTrackRequest): Promise<Track | undefined> {
     let searchString = ''
 
-    if (typeof input !== 'undefined' && input !== null) {
+    const searchTypes: ItemTypes[] = []
+
+    if (typeof input !== 'undefined' && input !== null && input !== '') {
       searchString = input
     } else {
-      const hasArtist = typeof artist !== 'undefined' || artist === null
-      const hasSong = typeof song !== 'undefined' || song === null
+      const hasArtist = typeof artist !== 'undefined' || artist !== null
+      const hasSong = typeof song !== 'undefined' || song !== null
 
       if (hasArtist && hasSong) {
+        searchTypes.push('track')
         searchString = `track:${song} artist:${artist}`
       } else if (hasSong) {
+        searchTypes.push('track')
         searchString = `track:${song}`
       } else if (hasArtist) {
+        searchTypes.push('artist')
         searchString = `artist:${artist}`
       }
     }
 
-    const search = await this.api.search.searchTracks(searchString, {
-      // HACK: for some reason a limit of 1 seems to pull up less reliable results
-      limit: 2,
-      market: 'US'
-    })
+    // HACK: for some reason a limit of 1 seems to pull up less reliable results
+    const search = await this.api.search(searchString, searchTypes, 'US', 3)
 
     // TODO: check artists and song title for result and make sure it isn't some
     // remix that happened to show up in the results first - this happens a lot
     // because the Spotify's Search API is not ideal
 
-    return search.items[0]
-  }
+    const track = search.tracks.items.find((track) => {
+      const hasArtist = track.artists.some(
+        (item) => item.name.toLowerCase() === artist.toLowerCase()
+      )
+      const hasTitle = track.name.toLowerCase() === song.toLowerCase()
 
-  async getTrackById(trackId: string): Promise<Track> {
-    const track = await this.api.tracks.getTrack(trackId)
+      return hasArtist && hasTitle
+    })
 
     return track
   }
 
-  async getTopArtists(): Promise<GetMyTopArtistsResponse> {
-    const topArtists = await this.api.personalization.getMyTopArtists()
+  async getTrackById(trackId: string): Promise<Track> {
+    const track = await this.api.tracks.get(trackId)
 
-    return topArtists
+    return track
   }
 
-  async getInitialDetails(): Promise<{
-    me: PrivateUser
-    topArtists: GetMyTopArtistsResponse
-    currentTrack: CurrentlyPlaying | string
-  }> {
-    const [me, topArtists, currentTrack] = await Promise.all([
-      this.getMe(),
-      this.getTopArtists(),
-      this.getCurrentlyPlaying()
-    ])
+  async getTopArtists(): Promise<Artist[]> {
+    const topArtists = await this.api.currentUser.topItems('artists')
 
-    return {
-      me,
-      topArtists,
-      currentTrack
-    }
+    return topArtists.items
+  }
+
+  async getTopTracks(): Promise<Track[]> {
+    // HACK: something is wrong with the topItems overloaded return type
+    const topTracks: Page<Track> = (await this.api.currentUser.topItems(
+      'tracks'
+    )) as unknown as Page<Track>
+
+    return topTracks.items
   }
 }
 

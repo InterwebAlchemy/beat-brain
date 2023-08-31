@@ -72,6 +72,7 @@ body {
   min-width: 200px;
   min-height: 200px;
   max-width: 75%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -80,7 +81,15 @@ body {
 
 .main-wrapper {
   position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   transition: all 0.3s ease;
+  transition: transform 0.3s ease-in-out;
+  transform-style: preserve-3d;
 }
 
 .main-wrapper--foreground {
@@ -94,6 +103,29 @@ body {
   z-index: -1;
 }
 
+.main-wrapper--flipped {
+  transform: rotateY(180deg);
+  transition: transform 0.3s ease-in-out;
+}
+
+.main-wrapper__front,
+.main-wrapper__back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backface-visibility: hidden;
+}
+
+.main-wrapper__back {
+  overflow-y: scroll;
+  background: #000;
+  transform: rotateY(180deg);
+}
+
 .player-controls {
   width: 100%;
   height: 100%;
@@ -102,7 +134,13 @@ body {
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  z-index: 2;
+}
+
+.flip-button {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 4;
 }
 
 .album-art {
@@ -112,7 +150,6 @@ body {
   justify-content: center;
   align-items: center;
   background-color: #dcdcdc;
-  z-index: 1;
 }
 
 .album-art a {
@@ -130,6 +167,9 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   width: 100%;
   padding: 20px;
   background: rgba(0, 0, 0, 0.75);
@@ -138,6 +178,10 @@ body {
 
 .now-playing a {
   color: #f7f7f7;
+}
+
+.now-playing__details {
+  margin-left: 20px;
 }
 
 .now-playing__song {
@@ -152,14 +196,14 @@ body {
 
 .player-progress {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   width: 100%;
   height: 5px;
   border: 0;
   border-radius: 0;
   background-color: #fff;
-  transition: all 1s linear;
+  transition: all 0.1s linear;
 }
 
 /* value: */
@@ -278,6 +322,11 @@ body {
 }
 
 .playlist-details__tracks__list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -285,6 +334,11 @@ body {
 
 .playlist-details__track {
   margin-bottom: 10px;
+}
+
+.playlist-details__track__image > img {
+  max-width: 40px;
+  max-height: 40px;
 }
 
 .playlist-details__track:last-child {
@@ -336,13 +390,13 @@ body {
 }
 
 .playlist-details__track__name {
-  font-size: 1.2rem;
+  font-size: 0.8rem;
   font-weight: bold;
   margin: 0;
 }
 
 .playlist-details__track__artist {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   font-weight: normal;
   margin: 0;
 }

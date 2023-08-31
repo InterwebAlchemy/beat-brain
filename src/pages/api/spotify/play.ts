@@ -7,8 +7,6 @@ const getRecentlyPlayedTracks = async (req, res): Promise<void> => {
 
   const { uri, deviceId } = req.body
 
-  console.log('NEED TO PLAY:', uri)
-
   try {
     const spotify = new Spotify(accessToken)
 

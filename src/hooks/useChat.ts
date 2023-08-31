@@ -2,17 +2,11 @@ import { useContext, useEffect, useState, useRef } from 'react'
 
 import { useSession } from '@supabase/auth-helpers-react'
 
+import type { Track, PlaybackState, Artist } from '@spotify/web-api-ts-sdk'
+
 import sampleSize from 'lodash.samplesize'
 
 import type { CreateChatCompletionResponse } from 'openai'
-
-import type {
-  PrivateUser,
-  CurrentlyPlaying,
-  Track
-} from 'spotify-web-api-ts/types/types/SpotifyObjects'
-
-import type { GetMyTopArtistsResponse } from 'spotify-web-api-ts/types/types/SpotifyResponses'
 
 import useProfile from './useProfile'
 import ChatContext from '../context/ChatContext'
@@ -23,7 +17,6 @@ import type { Conversation } from '../services/conversation/conversation'
 
 import type { RecommendationRequest } from '../types'
 import formatRecommendationRequest from '../utils/formatRecommendationRequest'
-import { BOT_HANDLE } from '../constants'
 
 const useChat = (): {
   ready: boolean
@@ -43,7 +36,9 @@ const useChat = (): {
   const [ready, setReady] = useState(false)
 
   const seeded = useRef(false)
-  const greeted = useRef(false)
+
+  const topArtistsRequest = new AbortController()
+  const currentTrackRequest = new AbortController()
 
   const getRecommendations = async (
     request: RecommendationRequest,
@@ -143,36 +138,6 @@ const useChat = (): {
     }
   }
 
-  const seedingRequest = new AbortController()
-  const greetingRequest = new AbortController()
-
-  const greetUser = async (): Promise<void> => {
-    if (
-      typeof conversation !== 'undefined' &&
-      conversation !== null &&
-      !greeted.current
-    ) {
-      const requestMessage = conversation.addMessage(
-        {
-          message: {
-            role: 'user',
-            content: `Hey there, ${BOT_HANDLE}!`
-          }
-        },
-        'default',
-        false
-      )
-
-      executeConversation({
-        signal: greetingRequest.signal
-      }).catch((error) => {
-        console.error(error)
-      })
-
-      requestMessage.memoryState = 'forgotten'
-    }
-  }
-
   const seedUserDetails = async (): Promise<void> => {
     if (
       typeof session !== 'undefined' &&
@@ -201,6 +166,61 @@ const useChat = (): {
         )
       }
 
+      const getTopArtists = fetchHandler<{ top: Artist[] }>(
+        '/api/spotify/top',
+        {
+          signal: topArtistsRequest.signal,
+          query: {
+            type: 'artists'
+          }
+        }
+      )
+
+      const getCurrentlyPlaying = fetchHandler<{
+        current: PlaybackState | string
+      }>('/api/spotify/current', {
+        signal: currentTrackRequest.signal
+      })
+
+      const [topArtists = { top: [] }, currentTrack = { current: '' }]: [
+        { top: Artist[] },
+        { current: PlaybackState | string }
+      ] = await Promise.all([getTopArtists, getCurrentlyPlaying])
+
+      const sampledArtists = sampleSize(
+        topArtists.top.filter(({ type }) => type === 'artist'),
+        10
+      )
+
+      const artistNames = sampledArtists.map((artist) => artist.name.trim())
+      const genreNames = sampledArtists.map((artist) => artist.genres).flat()
+
+      inputs.push(
+        `Favorite Artists: ${artistNames
+          .map((artist) => `<Artist>${artist}</Artist>`)
+          .join(', ')}`
+      )
+
+      inputs.push(`Favorite Genres: ${genreNames.join(', ')}`)
+
+      if (
+        typeof currentTrack?.current !== 'undefined' &&
+        currentTrack.current !== null &&
+        currentTrack.current !== '' &&
+        typeof currentTrack.current !== 'string' &&
+        currentTrack.current?.currently_playing_type === 'track'
+      ) {
+        inputs.push(
+          `Currently Listening to:\n` +
+            `<Track>\n` +
+            `  <Song>${currentTrack?.current?.item?.name?.trim?.()}<Song>\n` +
+            `  ${(currentTrack?.current?.item as Track)?.artists
+              .map((artist) => `<Artist>${artist.name.trim()}</Artist>`)
+              .join('\n')}\n` +
+            `</Track>`
+        )
+      }
+
       conversation?.addMessage(
         {
           message: {
@@ -211,62 +231,6 @@ const useChat = (): {
         'core',
         false
       )
-
-      const { details } = await fetchHandler<{
-        details: {
-          me: PrivateUser
-          topArtists: GetMyTopArtistsResponse
-          currentTrack: CurrentlyPlaying | string
-        }
-      }>('/api/spotify/info', {
-        signal: seedingRequest.signal
-      })
-
-      if (typeof details !== 'undefined' && details !== null) {
-        const inputs: string[] = []
-
-        const sampledArtists = sampleSize(
-          details.topArtists.items.filter(({ type }) => type === 'artist'),
-          10
-        )
-
-        const artistNames = sampledArtists.map((artist) => artist.name.trim())
-
-        inputs.push(`Favorite Artists: ${artistNames.join(', ')}`)
-
-        const genreNames = sampledArtists.map((artist) => artist.genres).flat()
-
-        if (
-          typeof details.currentTrack !== 'undefined' &&
-          details.currentTrack !== null &&
-          details.currentTrack !== '' &&
-          typeof details.currentTrack !== 'string' &&
-          details.currentTrack?.currently_playing_type === 'track'
-        ) {
-          const { currentTrack } = details
-
-          inputs.push(
-            `Currently Playing: ${
-              currentTrack?.item?.name?.trim?.() as string
-            } by ${(currentTrack?.item as Track)?.artists
-              .map((artist) => artist.name.trim())
-              .join(', ')}.`
-          )
-        }
-
-        inputs.push(`Favorite Genres: ${genreNames.join(', ')}`)
-
-        conversation?.addMessage(
-          {
-            message: {
-              role: 'system',
-              content: inputs.join('\n')
-            }
-          },
-          'core',
-          false
-        )
-      }
     } else {
       throw new Error('Could not seed conversation.')
     }
@@ -282,25 +246,9 @@ const useChat = (): {
       if (!seeded.current) {
         seedUserDetails()
           .then(() => {
-            console.log('Seeding user details')
             seeded.current = true
 
-            greetUser()
-              .then(() => {
-                greeted.current = true
-              })
-              .catch((error) => {
-                console.error(error)
-              })
-          })
-          .catch((error) => {
-            console.error(error)
-          })
-      } else if (!greeted.current) {
-        greetUser()
-          .then(() => {
-            console.log('Greeting user')
-            greeted.current = true
+            setReady(true)
           })
           .catch((error) => {
             console.error(error)
@@ -309,23 +257,10 @@ const useChat = (): {
     }
 
     return () => {
-      seedingRequest.abort()
-      greetingRequest.abort()
+      topArtistsRequest.abort()
+      currentTrackRequest.abort()
     }
   }, [conversation?.id, profile?.username])
-
-  useEffect(() => {
-    console.log(greeted.current, seeded.current)
-
-    setReady(greeted?.current && seeded?.current)
-  }, [greeted?.current, seeded?.current])
-
-  // useEffect(() => {
-  //   return () => {
-  //     seedingRequest.abort()
-  //     greetingRequest.abort()
-  //   }
-  // })
 
   return {
     ready,

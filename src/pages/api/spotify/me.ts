@@ -2,12 +2,12 @@ import requestHandler from '../../../utils/requestHandler'
 
 import Spotify from '../../../services/spotify'
 
-const getRecentlyPlayedTracks = async (req, res): Promise<void> => {
+const getUser = async (req, res): Promise<void> => {
   const { accessToken } = req
 
   const spotify = new Spotify(accessToken)
 
-  const details = await spotify.getInitialDetails()
+  const details = await spotify.getMe()
 
   res.status(200).json({ details })
 }
@@ -17,7 +17,7 @@ export default async function handler(req, res): Promise<void> {
     {
       authenticated: true,
       methods: ['GET'],
-      handler: getRecentlyPlayedTracks
+      handler: getUser
     },
     req,
     res
