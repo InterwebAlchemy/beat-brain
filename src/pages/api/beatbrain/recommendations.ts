@@ -13,7 +13,7 @@ const getPlaylist = async (req, res): Promise<void> => {
     const spotify = new Spotify(accessToken)
 
     try {
-      const track = await spotify.getTrack({
+      const track = await spotify.search({
         artist: input?.artist,
         song: input?.song
       })
@@ -58,10 +58,12 @@ const getPlaylist = async (req, res): Promise<void> => {
                   track?: Track
                 }) => {
                   try {
-                    const foundTrack = await spotify.getTrack({
+                    const foundTrack = await spotify.search({
                       artist: track?.artist,
                       song: track?.song
                     })
+
+                    console.log(foundTrack)
 
                     if (
                       typeof foundTrack !== 'undefined' &&
@@ -84,6 +86,8 @@ const getPlaylist = async (req, res): Promise<void> => {
             })
           } catch (error) {
             console.error(error)
+
+            res.status(500).json(error)
           }
         } else {
           res.status(500)

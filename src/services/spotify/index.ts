@@ -158,16 +158,16 @@ class Spotify {
   }
 
   async transferPlayback({ deviceId }): Promise<void> {
-    try {
-      await this.api.player.pausePlayback(deviceId)
-    } catch (error) {
-      console.error('Player is already paused')
-    }
+    // try {
+    //   await this.api.player.pausePlayback(deviceId)
+    // } catch (error) {
+    //   console.error('Player is already paused')
+    // }
 
     try {
-      await this.api.player.transferPlayback(deviceId, true)
+      await this.api.player.transferPlayback([deviceId], true)
     } catch (error) {
-      console.error('Could not transfer playback')
+      console.error('Could not transfer playback', error)
     }
   }
 
@@ -187,7 +187,7 @@ class Spotify {
     await this.api.player.addItemToPlaybackQueue(spotifyUri)
   }
 
-  async getTrack({
+  async search({
     artist = '',
     song = '',
     input = ''
@@ -225,7 +225,12 @@ class Spotify {
       const hasArtist = track.artists.some(
         (item) => item.name.toLowerCase() === artist.toLowerCase()
       )
-      const hasTitle = track.name.toLowerCase() === song.toLowerCase()
+
+      // due to the way that some songs have (featuring ARTIST) or (with ARTIST) or (ft ARTIST)
+      // in the title on Spotify, we can't look for an exact match
+      const hasTitle =
+        track.name.toLowerCase().startsWith(song.toLowerCase()) ||
+        track.name.toLowerCase().includes(song.toLowerCase())
 
       return hasArtist && hasTitle
     })
@@ -252,6 +257,22 @@ class Spotify {
     )) as unknown as Page<Track>
 
     return topTracks.items
+  }
+
+  async isLiked(trackId: string): Promise<boolean> {
+    const savedStatuses = await this.api.currentUser.tracks.hasSavedTracks([
+      trackId
+    ])
+
+    return savedStatuses.every((status) => status)
+  }
+
+  async like(trackId: string): Promise<void> {
+    await this.api.currentUser.tracks.saveTracks([trackId])
+  }
+
+  async dislike(trackId: string): Promise<void> {
+    await this.api.currentUser.tracks.removeSavedTracks([trackId])
   }
 }
 
