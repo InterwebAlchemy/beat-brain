@@ -19,9 +19,16 @@ html *:after {
 body {
   width: 100%;
   height: 100%;
-  background-color: #343434;
+  margin: 0 auto;
+  background-color: #42303b;
   color: #f7f7f7;
   font-family: var(--system-ui);
+}
+
+#__next {
+  width: 100%;
+  height: 100%;
+  display: flex;
 }
 
 .interface {
@@ -31,7 +38,6 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 20px;
 }
 
 .container {
@@ -43,44 +49,135 @@ body {
   align-items: flex-start;
 }
 
+.app-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
 .navbar {
   width: 100%;
   display: flex;
   flex-direction: row-reverse;
   align-items: center;
+  padding: 10px 20px;
 }
 
 .player {
-  width: 70%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.chat {
-  width: 30%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.album-art {
+  width: 100%;
+  height: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-width: 300px;
-  min-height: 300px;
-  background-color: #dcdcdc;
 }
 
-.btn-recommendations {
+.swap-wrapper {
+  position: relative;
+  min-width: 200px;
+  min-height: 200px;
+  max-width: 50%;
+  height: 50%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-wrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  transition: transform 0.3s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.main-wrapper--foreground {
+  transform: translate3d(0, 0, 1px);
+  box-shadow: 5px 5px 10px -5px #000000;
+  z-index: 1;
+}
+
+.main-wrapper--background {
+  transform: translate3d(10px, 10px, -1px);
+  z-index: -1;
+}
+
+.main-wrapper--flipped {
+  transform: rotateY(180deg);
+  transition: transform 0.3s ease-in-out;
+}
+
+.main-wrapper--background.main-wrapper--flipped {
+  transform: rotateY(180deg) translate3d(-10px, 10px, -1px);
+}
+
+.main-wrapper__front,
+.main-wrapper__back {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  backface-visibility: hidden;
+}
+
+.main-wrapper__back {
+  overflow-y: scroll;
+  background: #000;
+  transform: rotateY(180deg);
+}
+
+.player-controls {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.flip-button {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.flip-button svg {
+  fill: #f7f7f7;
+}
+
+.main-wrapper--flipped .flip-button {
+  transform: rotateY(180deg);
+}
+
+.album-art {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #dcdcdc;
 }
 
 .album-art a {
@@ -92,6 +189,165 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.now-playing {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+  background: #303b42;
+  z-index: 3;
+}
+
+.now-playing a {
+  color: #f7f7f7;
+}
+
+.now-playing__details {
+  margin-left: 20px;
+}
+
+.now-playing__song {
+  font-size: 24px;
+}
+
+/* background: */
+.player-progress::-webkit-progress-bar {
+  background-color: #fff;
+  width: 100%;
+}
+
+.player-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  border: 0;
+  border-radius: 0;
+  background-color: #fff;
+  transition: all 0.1s linear;
+}
+
+.main-wrapper--flipped .player-progress {
+  transform: rotateY(180deg);
+}
+
+.player-progress::-webkit-progress-value {
+  background-color: #33e9f3 !important;
+}
+
+.player-progress::-moz-progress-bar {
+  background-color: #33e9f3 !important;
+}
+
+.player-progress {
+  color: #33e9f3;
+}
+
+.beat-brain__tracks {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.swap-button {
+  position: absolute;
+  top: 20px;
+  left: calc(100% - 15px);
+  z-index: 0;
+  transition: all 0.3s ease;
+  opacity: 0.75;
+}
+
+.swap-button:hover {
+  left: 100%;
+  opacity: 1;
+}
+
+.swap-button--active {
+  left: 100%;
+}
+
+.swap-button > button {
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.beat-brain-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #183e40;
+  transition: all 0.3s ease;
+  overflow-y: scroll;
+}
+
+.beat-brain-container--foreground {
+  transform: translate3d(0, 0, 1px);
+  box-shadow: 5px 5px 10px -5px #000000;
+  z-index: 1;
+}
+
+.beat-brain-container--background {
+  transform: translate3d(10px, 10px, -1px);
+  z-index: -1;
+}
+
+.beat-brain__commentary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  color: #343434;
+}
+
+.beat-brain__commentary > ol {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.beat-brain__suggestion {
+  padding: 15px 10px 15px 15px;
+  border: 3px solid #ecacd3;
+  border-radius: 20px 0 20px 20px;
+  background: #f7f7f7;
+  box-shadow: 5px 5px 10px -5px #000000;
+}
+
+.beat-brain__suggestion + .beat-brain__suggestion {
+  margin-top: 20px;
+}
+
+.beat-brain__suggestion__notes > p {
+  margin: 0;
+}
+
+.beat-brain__suggestion__notes a {
+  color: #343434;
+  font-weight: bold;
+  text-decoration-color: #b645ab;
+}
+
+.beat-brain__suggestion__notes a:hover,
+.beat-brain__suggestion__notes a:focus {
+  color: #b645ab;
+  text-decoration-color: #b645ab;
 }
 
 .playlist-teaser {
@@ -150,13 +406,29 @@ body {
 }
 
 .playlist-details__tracks__list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
 .playlist-details__track {
-  margin-bottom: 10px;
+  display: flex;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.playlist-details__track__image {
+  display: flex;
+}
+
+.playlist-details__track__image > img {
+  max-width: 40px;
+  max-height: 40px;
 }
 
 .playlist-details__track:last-child {
@@ -184,6 +456,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
+  width: 100%;
 }
 
 .playlist-details__track__info {
@@ -208,13 +481,112 @@ body {
 }
 
 .playlist-details__track__name {
-  font-size: 1.2rem;
+  font-size: 0.8rem;
   font-weight: bold;
   margin: 0;
 }
 
 .playlist-details__track__artist {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   font-weight: normal;
   margin: 0;
+}
+
+.welcome {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#connect-button {
+  background: #1db954;
+  color: #fff;
+  font-size: 24px;
+  padding: 25px 20px;
+  border-radius: 25%/50%;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.navbar #connect-button {
+  font-size: 16px;
+  padding: 15px 10px;
+}
+
+.btn-spotify {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.btn-spotify__like {
+  margin-left: auto;
+}
+
+.btn-spotify__play-pause {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  padding: 20px;
+  opacity: 0.75;
+}
+
+.btn-spotify__play-pause:hover,
+.btn-spotify__play-pause:focus {
+  opacity: 1;
+}
+
+.now-playing .btn-spotify__play-pause {
+  padding: 10px;
+  background: transparent;
+}
+
+.btn-spotify__transfer {
+  background: #1db954;
+  color: #fff;
+  fill: #fff;
+  stroke: transparent;
+  font-size: 24px;
+  padding: 15px 20px;
+  border-radius: 20%/50%;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.btn-spotify__transfer > span {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-left: 15px;
+}
+
+.btn-spotify__previous,
+.btn-spotify__next {
+  position: absolute;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  opacity: 0.75;
+}
+
+.btn-spotify__previous:hover,
+.btn-spotify__previous:focus,
+.btn-spotify__next:hover,
+.btn-spotify__next:focus {
+  opacity: 1;
+}
+
+.btn-spotify__previous {
+  right: 100%;
+}
+
+.btn-spotify__next {
+  left: 100%;
 }

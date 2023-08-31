@@ -5,18 +5,26 @@ import Spotify from '../../../services/spotify'
 const getRecentlyPlayedTracks = async (req, res): Promise<void> => {
   const { accessToken } = req
 
-  const spotify = new Spotify(accessToken)
+  const { uri, deviceId } = req.body
 
-  const details = await spotify.getInitialDetails()
+  try {
+    const spotify = new Spotify(accessToken)
 
-  res.status(200).json({ details })
+    await spotify.startPlaying({ track: uri, deviceId })
+
+    res.status(202).json({ played: uri })
+  } catch (error) {
+    console.error(error)
+
+    res.status(500)
+  }
 }
 
 export default async function handler(req, res): Promise<void> {
   await requestHandler(
     {
       authenticated: true,
-      methods: ['GET'],
+      methods: ['POST'],
       handler: getRecentlyPlayedTracks
     },
     req,

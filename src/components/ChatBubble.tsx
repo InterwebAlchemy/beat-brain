@@ -32,13 +32,6 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
 
             <PlaylistTeaser name={playlist.name} tracks={playlist.tracks} />
 
-            {typeof playlist?.commentary?.[0] !== 'undefined' &&
-            playlist?.commentary?.[0] !== '' ? (
-              <p>{playlist.commentary[0]}</p>
-            ) : (
-              <></>
-            )}
-
             <ol>
               {playlist.tracks.map((item, index) => {
                 return (
@@ -56,10 +49,6 @@ const ChatBubble = ({ message }: ChatBubbleProps): React.ReactElement => {
                 )
               })}
             </ol>
-
-            {playlist?.commentary?.slice(1).map((item, index) => {
-              return <p key={index}>{item}</p>
-            })}
           </div>
         </div>
         <div className="conversation__item__footer">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import {
   SessionContextProvider,
   type Session
@@ -21,7 +21,7 @@ function BeatBrainApp({
 }: AppProps<{
   initialSession: Session
 }>): React.ReactElement {
-  const [supabase] = useState(() => createBrowserSupabaseClient())
+  const [supabase] = useState(() => createPagesBrowserClient())
 
   return (
     <SessionContextProvider

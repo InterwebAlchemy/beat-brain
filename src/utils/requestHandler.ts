@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
-
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
+import type { AccessToken } from '@spotify/web-api-ts-sdk'
 
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-
+export const dynamic = 'force-dynamic'
 export interface ExtendedNextApiRequest<T = unknown> extends NextApiRequest {
-  accessToken?: string
+  accessToken?: AccessToken
   identifier?: string
   body: T
 }
@@ -36,24 +36,47 @@ const requestHandler = async <Req, Res>(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> => {
+  const supabase = createPagesServerClient(
+    { req, res },
+    {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      supabaseKey: process.env.SUPABASE_SERVICE_KEY
+    }
+  )
+
   const options = { ...DEFAULT_HANDLER_OPTIONS, ...handlerOptions }
 
   if (options.methods?.includes(req.method)) {
     if (options?.authenticated) {
-      // Create authenticated Supabase Client
-      const supabase = createServerSupabaseClient({ req, res })
-
       // Check if we have a session
       const {
         data: { session }
       } = await supabase.auth.getSession()
 
       if (typeof session !== 'undefined' && session !== null) {
+        const {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          // expires_at,
+          // expires_in,
+          provider_refresh_token,
+          provider_token,
+          token_type
+          /* eslint-enable @typescript-eslint/naming-convention */
+        } = session
+
+        const token = {
+          refresh_token: provider_refresh_token,
+          access_token: provider_token,
+          token_type
+        }
+
         const accessToken = session?.provider_token
 
         if (typeof accessToken !== 'undefined' && accessToken !== null) {
           try {
-            ;(req as ExtendedNextApiRequest).accessToken = accessToken
+            // HACK: figure out a better way to deal with the type mismatches
+            // @ts-expect-error
+            ;(req as ExtendedNextApiRequest).accessToken = token
             ;(req as ExtendedNextApiRequest).identifier = createHash('sha256')
               .update(session?.user?.identities?.[0]?.id ?? '')
               .digest('hex')
