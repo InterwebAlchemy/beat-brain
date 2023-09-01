@@ -334,7 +334,6 @@ const WebPlayer = (): React.ReactElement => {
 
       player.addListener('ready', (playerInstance) => {
         const { device_id: deviceId } = playerInstance
-
         setDeviceId(deviceId)
       })
 
@@ -360,18 +359,22 @@ const WebPlayer = (): React.ReactElement => {
 
   // when the app loads, transfer playback
   useEffect(() => {
-    if (ready) {
-      if (!isActive) {
-        console.log('READY')
-
-        transferPlayback()
-      } else {
-        console.log('ALREADY ACTIVE')
-      }
-    } else {
-      console.log('NOT READY')
+    if (ready && !isActive && typeof deviceId !== 'undefined') {
+      transferPlayback()
+    } else if (ready && isActive) {
+      fetch('/api/player/play', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          deviceId
+        })
+      }).catch((error) => {
+        console.error(error)
+      })
     }
-  }, [ready, isActive])
+  }, [ready, isActive, deviceId])
 
   useEffect(() => {
     if (
@@ -400,210 +403,211 @@ const WebPlayer = (): React.ReactElement => {
     }
   }, [currentTrack?.id])
 
-  if (ready && isActive && typeof currentTrack === 'undefined') {
+  if (ready && !isActive) {
     return (
-      <button
-        className="btn-spotify btn-spotify__transfer"
-        title="Connect to BeatBrain"
-        onClick={transferPlayback}>
-        <Robot fill="#fff" />
-        <span>Listen</span>
-      </button>
+      <>
+        <h2>Transfer playback of Spotify to BeatBrain.</h2>
+        <button
+          className="btn-spotify btn-spotify__transfer"
+          title="Connect to BeatBrain"
+          // disabled={!ready || !isActive}
+          onClick={transferPlayback}>
+          <Robot fill="#fff" />
+          <span>Listen</span>
+        </button>
+      </>
     )
-  }
+  } else if (ready && isActive) {
+    return (
+      <>
+        <div className="app-container">
+          <div className="swap-wrapper">
+            <div
+              className={`main-wrapper main-wrapper--${
+                showPlayer ? 'foreground' : 'background'
+              }${flipped ? ' main-wrapper--flipped' : ''}`}>
+              <div className="main-wrapper__front">
+                <div className="album-art">
+                  {typeof currentTrack !== 'undefined' &&
+                  currentTrack !== null ? (
+                    <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
+                      <img
+                        src={currentTrack?.album?.images?.[0]?.url ?? ''}
+                        className="now-playing__cover"
+                        alt={`Album cover art for ${
+                          currentTrack?.album?.name ?? 'Unknown'
+                        }`}
+                      />
+                    </a>
+                  ) : (
+                    <></>
+                  )}
+                </div>
+                {!flipped ? (
+                  <div className="player-controls">
+                    <button
+                      className="btn-spotify btn-spotify__previous"
+                      title="Previous Track"
+                      disabled={playerState?.disallows.skipping_prev}
+                      onClick={() => {
+                        player?.previousTrack().catch((error) => {
+                          console.error(error)
+                        })
+                      }}>
+                      <PrevIcon stroke="#fff" />
+                    </button>
 
-  return (
-    <>
-      <div className="app-container">
-        <div className="swap-wrapper">
-          <div
-            className={`main-wrapper main-wrapper--${
-              showPlayer ? 'foreground' : 'background'
-            }${flipped ? ' main-wrapper--flipped' : ''}`}>
-            <div className="main-wrapper__front">
-              <div className="album-art">
-                {typeof currentTrack !== 'undefined' &&
-                currentTrack !== null ? (
-                  <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
-                    <img
-                      src={currentTrack?.album?.images?.[0]?.url ?? ''}
-                      className="now-playing__cover"
-                      alt={`Album cover art for ${
-                        currentTrack?.album?.name ?? 'Unknown'
-                      }`}
-                    />
-                  </a>
+                    <button
+                      className="btn-spotify btn-spotify__play-pause"
+                      title={isPaused ? 'Play' : 'Pause'}
+                      onClick={() => {
+                        player?.togglePlay().catch((error) => {
+                          console.error(error)
+                        })
+                      }}>
+                      {isPaused ? (
+                        <PlayIcon stroke="#fff" />
+                      ) : (
+                        <PauseIcon stroke="#fff" />
+                      )}
+                    </button>
+
+                    <button
+                      className="btn-spotify btn-spotify__next"
+                      title="Next Track"
+                      disabled={playerState?.disallows.skipping_next}
+                      onClick={() => {
+                        player?.nextTrack().catch((error) => {
+                          console.error(error)
+                        })
+                      }}>
+                      <NextIcon stroke="#fff" />
+                    </button>
+                  </div>
                 ) : (
                   <></>
                 )}
               </div>
-              {!flipped ? (
-                <div className="player-controls">
-                  <button
-                    className="btn-spotify btn-spotify__previous"
-                    title="Previous Track"
-                    disabled={playerState?.disallows.skipping_prev}
-                    onClick={() => {
-                      player?.previousTrack().catch((error) => {
-                        console.error(error)
-                      })
-                    }}>
-                    <PrevIcon stroke="#fff" />
-                  </button>
-
-                  <button
-                    className="btn-spotify btn-spotify__play-pause"
-                    title={isPaused ? 'Play' : 'Pause'}
-                    disabled={
-                      isPaused
-                        ? playerState?.disallows.pausing
-                        : playerState?.disallows.resuming
-                    }
-                    onClick={() => {
-                      player?.togglePlay().catch((error) => {
-                        console.error(error)
-                      })
-                    }}>
-                    {isPaused ? (
-                      <PlayIcon stroke="#fff" />
-                    ) : (
-                      <PauseIcon stroke="#fff" />
-                    )}
-                  </button>
-
-                  <button
-                    className="btn-spotify btn-spotify__next"
-                    title="Next Track"
-                    disabled={playerState?.disallows.skipping_next}
-                    onClick={() => {
-                      player?.nextTrack().catch((error) => {
-                        console.error(error)
-                      })
-                    }}>
-                    <NextIcon stroke="#fff" />
-                  </button>
+              <div className="main-wrapper__back">
+                <div className="beat-brain__tracks">
+                  <PlaylistDetails tracks={recommendations} visible={flipped} />
                 </div>
+              </div>
+              <progress
+                className="player-progress"
+                max={playerState?.duration ?? 0}
+                value={progress}></progress>
+              {recommendations.length > 0 ? (
+                <button
+                  className={`flip-button${
+                    flipped ? ' flip-button--flipped' : ''
+                  }`}
+                  title={flipped ? 'Now Playing' : 'Recommendations'}
+                  onClick={onFlip}>
+                  {flipped ? <TurntableIcon /> : <QueueIcon stroke="#f7f7f7" />}
+                </button>
               ) : (
                 <></>
               )}
             </div>
-            <div className="main-wrapper__back">
-              <div className="beat-brain__tracks">
-                <PlaylistDetails tracks={recommendations} visible={flipped} />
-              </div>
-            </div>
-            <progress
-              className="player-progress"
-              max={playerState?.duration ?? 0}
-              value={progress}></progress>
             {recommendations.length > 0 ? (
-              <button
-                className={`flip-button${
-                  flipped ? ' flip-button--flipped' : ''
-                }`}
-                title={flipped ? 'Now Playing' : 'Recommendations'}
-                onClick={onFlip}>
-                {flipped ? <TurntableIcon /> : <QueueIcon stroke="#f7f7f7" />}
-              </button>
+              <div
+                className={`swap-button swap-button--${
+                  showPlayer ? 'inactive' : 'active'
+                }`}>
+                <button onClick={onSwap} type="button">
+                  <Image
+                    src={PlaylistThumbnail}
+                    alt=""
+                    width="90"
+                    height="90"
+                  />
+                </button>
+              </div>
             ) : (
               <></>
             )}
-          </div>
-          {recommendations.length > 0 ? (
             <div
-              className={`swap-button swap-button--${
-                showPlayer ? 'inactive' : 'active'
+              className={`beat-brain-container beat-brain-container--${
+                showPlayer ? 'background' : 'foreground'
               }`}>
-              <button onClick={onSwap} type="button">
-                <Image src={PlaylistThumbnail} alt="" width="90" height="90" />
+              <div className="beat-brain__commentary">
+                <ol>{renderCommentary()}</ol>
+              </div>
+            </div>
+          </div>
+          {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
+            <div className="now-playing">
+              <button
+                className="btn-spotify btn-spotify__play-pause"
+                title={isPaused ? 'Play' : 'Pause'}
+                onClick={() => {
+                  player?.togglePlay().catch((error) => {
+                    console.error(error)
+                  })
+                }}>
+                {isPaused ? (
+                  <PlayIcon stroke="#fff" />
+                ) : (
+                  <PauseIcon stroke="#fff" />
+                )}
+              </button>
+              <div className="now-playing__details">
+                <div className="now-playing__song">
+                  <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
+                    {currentTrack.name}
+                  </a>
+                </div>
+                <div className="now-playing__artist">
+                  {currentTrack.artists.map((artist, index) => {
+                    return (
+                      <React.Fragment key={artist.uri}>
+                        <a href={spotifyUriToUrl(artist.uri)} target="_blank">
+                          {artist.name}
+                        </a>
+                        {index !== currentTrack.artists.length - 1 ? ', ' : ''}
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
+              </div>
+              <button
+                className="btn-spotify btn-spotify__like"
+                title={
+                  // @ts-expect-error
+                  currentTrack.liked === true ? 'Unlike' : 'Like'
+                }
+                onClick={() => {
+                  fetchHandler(`/api/spotify/like/${currentTrack.id}`, {
+                    // @ts-expect-error
+                    method: currentTrack.liked === true ? 'DELETE' : 'POST'
+                  })
+                    .then((response) => {
+                      // @ts-expect-error
+                      currentTrack.liked = response[currentTrack?.id] ?? false
+                    })
+                    .catch((error) => {
+                      console.error(error)
+                    })
+                }}>
+                <LikeIcon
+                  stroke={
+                    // @ts-expect-error
+                    currentTrack.liked === true ? '#1db954' : '#fff'
+                  }
+                />
               </button>
             </div>
           ) : (
             <></>
           )}
-          <div
-            className={`beat-brain-container beat-brain-container--${
-              showPlayer ? 'background' : 'foreground'
-            }`}>
-            <div className="beat-brain__commentary">
-              <ol>{renderCommentary()}</ol>
-            </div>
-          </div>
         </div>
-        {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
-          <div className="now-playing">
-            <button
-              className="btn-spotify btn-spotify__play-pause"
-              title={isPaused ? 'Play' : 'Pause'}
-              disabled={
-                isPaused
-                  ? playerState?.disallows.pausing
-                  : playerState?.disallows.resuming
-              }
-              onClick={() => {
-                player?.togglePlay().catch((error) => {
-                  console.error(error)
-                })
-              }}>
-              {isPaused ? (
-                <PlayIcon stroke="#fff" />
-              ) : (
-                <PauseIcon stroke="#fff" />
-              )}
-            </button>
-            <div className="now-playing__details">
-              <div className="now-playing__song">
-                <a href={spotifyUriToUrl(currentTrack.uri)} target="_blank">
-                  {currentTrack.name}
-                </a>
-              </div>
-              <div className="now-playing__artist">
-                {currentTrack.artists.map((artist, index) => {
-                  return (
-                    <React.Fragment key={artist.uri}>
-                      <a href={spotifyUriToUrl(artist.uri)} target="_blank">
-                        {artist.name}
-                      </a>
-                      {index !== currentTrack.artists.length - 1 ? ', ' : ''}
-                    </React.Fragment>
-                  )
-                })}
-              </div>
-            </div>
-            <button
-              className="btn-spotify btn-spotify__like"
-              title={
-                // @ts-expect-error
-                currentTrack.liked === true ? 'Unlike' : 'Like'
-              }
-              onClick={() => {
-                fetchHandler(`/api/spotify/like/${currentTrack.id}`, {
-                  // @ts-expect-error
-                  method: currentTrack.liked === true ? 'DELETE' : 'POST'
-                })
-                  .then((response) => {
-                    // @ts-expect-error
-                    currentTrack.liked = response[currentTrack?.id] ?? false
-                  })
-                  .catch((error) => {
-                    console.error(error)
-                  })
-              }}>
-              <LikeIcon
-                stroke={
-                  // @ts-expect-error
-                  currentTrack.liked === true ? '#1db954' : '#fff'
-                }
-              />
-            </button>
-          </div>
-        ) : (
-          <></>
-        )}
-      </div>
-      <Script src="https://sdk.scdn.co/spotify-player.js" async />
-    </>
-  )
+        <Script src="https://sdk.scdn.co/spotify-player.js" async />
+      </>
+    )
+  } else {
+    return <>Loading...</>
+  }
 }
 
 export default WebPlayer
