@@ -21,7 +21,7 @@ const getPlaylist = async (req, res): Promise<void> => {
       if (typeof track !== 'undefined') {
         messages.push({
           role: 'system',
-          content: `Choose a <Track> from an <Artist> not in this list: ${track.artists
+          content: `DO NOT RECOMMEND A <Track> FROM ${track.artists
             .map(({ name }) => `<Artist>${name}</Artist>`)
             .join(', ')}`
         })
@@ -32,6 +32,8 @@ const getPlaylist = async (req, res): Promise<void> => {
         })
 
         const suggestionMessage = response.choices[0].message
+
+        console.log('suggestionMessage:', suggestionMessage)
 
         if (typeof suggestionMessage?.content === 'string') {
           const parsedContentWithOutExtraSpaces = suggestionMessage.content

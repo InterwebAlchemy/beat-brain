@@ -154,7 +154,7 @@ class Spotify {
   }
 
   async startPlaying({ track, deviceId }): Promise<void> {
-    await this.api.player.startResumePlayback(deviceId, track)
+    await this.api.player.startResumePlayback(deviceId, undefined, [track])
   }
 
   async transferPlayback({ deviceId }): Promise<void> {
@@ -208,8 +208,12 @@ class Spotify {
       }
     }
 
+    console.log(searchString, searchTypes)
+
     // HACK: for some reason a limit of 1 seems to pull up less reliable results
     const search = await this.api.search(searchString, searchTypes, 'US', 3)
+
+    console.log(search)
 
     // TODO: check artists and song title for result and make sure it isn't some
     // remix that happened to show up in the results first - this happens a lot

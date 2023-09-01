@@ -69,9 +69,7 @@ const WebPlayer = (): React.ReactElement => {
           {
             message: {
               role: 'system',
-              content: `${
-                conversation.userHandle
-              } has already listened to:\n${recommendations
+              content: `DO NOT REPEAT THESE RECOMMENDATIONS:\n${recommendations
                 .map(
                   (track) =>
                     `<Track><Song>${track.name}</Song> - ${track.artists
@@ -490,7 +488,11 @@ const WebPlayer = (): React.ReactElement => {
               </div>
               <div className="main-wrapper__back">
                 <div className="beat-brain__tracks">
-                  <PlaylistDetails tracks={recommendations} visible={flipped} />
+                  <PlaylistDetails
+                    tracks={recommendations}
+                    visible={flipped}
+                    deviceId={deviceId}
+                  />
                 </div>
               </div>
               <progress

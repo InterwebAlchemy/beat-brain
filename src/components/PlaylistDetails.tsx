@@ -2,15 +2,18 @@ import React from 'react'
 import type { Track } from '@spotify/web-api-ts-sdk'
 
 import spotifyUriToUrl from '../utils/spotifyUriToUrl'
+import fetchHandler from '../utils/fetchHandler'
 
 export interface PlaylistDetailsProps {
   tracks: Track[]
   visible?: boolean
+  deviceId?: string
 }
 
 const PlaylistDetails = ({
   tracks = [],
-  visible = false
+  visible = false,
+  deviceId
 }: PlaylistDetailsProps): React.ReactElement => {
   const linkClickHandler = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
@@ -21,10 +24,17 @@ const PlaylistDetails = ({
   const onPlayTrack = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ): void => {
-    const spotifyId = e.currentTarget.dataset.spotifyid
+    const uri = e.currentTarget.dataset.spotifyuri
 
-    // TODO: play track via Spotify API
-    console.log('play track', spotifyId)
+    fetchHandler(`/api/spotify/play`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ uri, deviceId })
+    }).catch((error) => {
+      console.error(error)
+    })
   }
 
   const renderArtists = (track: Track): React.ReactElement[] =>
@@ -52,7 +62,8 @@ const PlaylistDetails = ({
             <button
               className="playlist-details__track__button"
               onClick={onPlayTrack}
-              data-spotifyid={item?.id}>
+              data-spotifyId={item?.id}
+              data-spotifyUri={item?.uri}>
               <div className="playlist-details__track__header">
                 <div className="playlist-details__track__image">
                   <img

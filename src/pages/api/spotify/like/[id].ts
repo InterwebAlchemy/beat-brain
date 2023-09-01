@@ -7,8 +7,6 @@ const like = async (req, res): Promise<void> => {
 
   const id = req.url.split('/').pop()
 
-  console.log(id)
-
   const spotify = new Spotify(accessToken)
 
   switch (req.method) {
