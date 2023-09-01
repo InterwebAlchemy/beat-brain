@@ -1,12 +1,15 @@
 import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react'
 
+import SpotifyIcon from './Icons/Spotify'
+
 import Spotify from '../services/spotify/auth'
 
 export interface LoginProps {
+  size?: 'sm' | 'md' | 'lg'
   afterLogin?: () => Promise<void>
 }
 
-const Login = ({ afterLogin }: LoginProps): React.ReactElement => {
+const Login = ({ afterLogin, size = 'lg' }: LoginProps): React.ReactElement => {
   const session = useSession()
   const supabase = useSupabaseClient()
 
@@ -25,9 +28,15 @@ const Login = ({ afterLogin }: LoginProps): React.ReactElement => {
   }
 
   return (
-    <button id="connect-button" onClick={onClick}>
-      {session !== null ? 'Disconnect' : 'Connect'}
-    </button>
+    <>
+      <button
+        id="connect-button"
+        className={`${session !== null ? 'logout' : 'login'} size--${size}`}
+        onClick={onClick}>
+        <SpotifyIcon />{' '}
+        <span>{session !== null ? 'Logout' : 'Login w/ Spotify'}</span>
+      </button>
+    </>
   )
 }
 

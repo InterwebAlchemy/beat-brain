@@ -3,7 +3,6 @@ import { useSession } from '@supabase/auth-helpers-react'
 
 import Login from '../components/Login'
 import WebPlayer from '../components/WebPlayer'
-// import SidebarView from '../components/SidebarView'
 
 const HomePage = (): React.ReactElement => {
   const session = useSession()
@@ -11,12 +10,22 @@ const HomePage = (): React.ReactElement => {
   return (
     <>
       <div className="interface">
+        <nav className="navbar">
+          <h1>BeatBrain</h1>
+          {typeof session !== 'undefined' && session !== null ? (
+            <Login size="sm" />
+          ) : (
+            <></>
+          )}
+        </nav>
         <div className="container">
           <div className="player">
             {typeof session !== 'undefined' && session !== null ? (
               <WebPlayer />
             ) : (
-              <Login />
+              <>
+                <Login />
+              </>
             )}
           </div>
         </div>
