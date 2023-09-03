@@ -10,13 +10,12 @@ const getPlaylist = async (req, res): Promise<void> => {
     const { identifier, accessToken } = req
     const { messages, input } = req.body
 
+    console.log(input)
+
     const spotify = new Spotify(accessToken)
 
     try {
-      const track = await spotify.search({
-        artist: input?.artist,
-        song: input?.song
-      })
+      const track: Track = input.track
 
       if (typeof track !== 'undefined') {
         messages.push({

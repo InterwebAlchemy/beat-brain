@@ -11,9 +11,19 @@ const QueueIcon = (props): React.ReactElement => (
     <path
       stroke={props.stroke ?? '#000'}
       strokeLinecap="round"
-      strokeLinejoin="round"
       strokeWidth={1}
-      d="M16 5v13m0 0c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2ZM4 5h8M4 9h8m-8 4h4m8-9 4-1v4l-4 1V4Z"
+      d="M11 14H3M11 18H3"
+    />
+    <path
+      stroke={props.stroke ?? '#000'}
+      strokeWidth={1}
+      d="M18.875 14.118c1.654.955 2.48 1.433 2.602 2.121a1.5 1.5 0 0 1 0 .521c-.121.69-.948 1.167-2.602 2.121-1.654.955-2.48 1.433-3.138 1.194a1.499 1.499 0 0 1-.451-.261c-.536-.45-.536-1.404-.536-3.314 0-1.91 0-2.865.536-3.314a1.5 1.5 0 0 1 .451-.26c.657-.24 1.484.238 3.138 1.192Z"
+    />
+    <path
+      stroke={props.stroke ?? '#000'}
+      strokeLinecap="round"
+      strokeWidth={1}
+      d="M3 6h10.5M20 6h-2.25M20 10H9.5M3 10h2.25"
     />
   </svg>
 )

@@ -165,6 +165,10 @@ body {
 }
 
 .flip-button svg {
+  fill: transparent;
+}
+
+.main-wrapper--flipped .flip-button svg {
   fill: #f7f7f7;
 }
 
