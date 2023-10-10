@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useSession } from '@supabase/auth-helpers-react'
 import Image from 'next/image'
 import Script from 'next/script'
-import ReactMarkdown from 'react-markdown'
 import type { Artist, SimplifiedArtist, Track } from '@spotify/web-api-ts-sdk'
+
+import BeatBrainNotes from './BeatBrainNotes'
 
 import QueueIcon from './Icons/Queue'
 import TurntableIcon from './Icons/Turntable'
@@ -35,6 +36,7 @@ const WebPlayer = (): React.ReactElement => {
   const [deviceId, setDeviceId] = useState<string>()
   const [player, setPlayer] = useState<Spotify.Player>()
   const [currentTrack, setCurrentTrack] = useState<Track>()
+  const [likedTrack, setLikedTrack] = useState(false)
   const [showPlayer, setShowPlayer] = useState(true)
   const [playerState, setPlayerState] = useState<Spotify.PlaybackState | null>(
     null
@@ -216,125 +218,6 @@ const WebPlayer = (): React.ReactElement => {
     return { 0: false }
   }
 
-  const renderCommentary = (): React.ReactElement[] => {
-    const formatContent = (content: string = ''): string => {
-      const entityTagRegex =
-        /<(Track|Song|Artist)>(.*?)<\/(Track|Song|Artist)>/gim
-
-      const foundEntities = content.matchAll(entityTagRegex)
-
-      for (const entity of foundEntities) {
-        const [fullMatch, entityType, entityName] = entity
-
-        const checkEntityName = entityName.trim().toLowerCase()
-
-        switch (entityType) {
-          case 'Track':
-          case 'Song':
-            // see if the track contains just a string or also some tagged entities
-            // if it does, our matchAll from before will pick it up and we can just remove the track tags
-            // if it doesn't, we need to do a lookup for the track and replace the tags with the track name
-            if (
-              (entityType === 'Track' && !entityTagRegex.test(entityName)) ||
-              entityType === 'Song'
-            ) {
-              const foundTrackDetails = Object.values(trackStore).find(
-                (track) => {
-                  if (track.name.trim().toLowerCase() === checkEntityName) {
-                    return track
-                  }
-
-                  return false
-                }
-              )
-
-              if (typeof foundTrackDetails !== 'undefined') {
-                content = content.replaceAll(
-                  fullMatch,
-                  `[${foundTrackDetails.name}](${spotifyUriToUrl(
-                    foundTrackDetails.uri
-                  )})`
-                )
-              } else {
-                content = content.replaceAll(fullMatch, entityName)
-              }
-            }
-
-            break
-          case 'Artist': {
-            const foundArtistDetails = Object.values(artistStore).find(
-              (artist) => {
-                if (artist.name.trim().toLowerCase() === checkEntityName) {
-                  return artist
-                }
-
-                return false
-              }
-            )
-
-            if (typeof foundArtistDetails !== 'undefined') {
-              content = content.replaceAll(
-                fullMatch,
-                `[${foundArtistDetails.name}](${spotifyUriToUrl(
-                  foundArtistDetails.uri
-                )})`
-              )
-            } else {
-              content = content.replaceAll(fullMatch, entityName)
-            }
-
-            break
-          }
-        }
-      }
-
-      return content
-    }
-
-    if (conversation === null) {
-      return [<></>]
-    }
-
-    return conversation.messages
-      .filter(
-        ({ message }) =>
-          // @ts-expect-error
-          message.role === 'assistant' && message?.content?.tracks?.length > 0
-      )
-      .reverse()
-      .map((messageObject) => {
-        // TODO: fix all these type errors instead of ignoring them
-        // @ts-expect-error
-        if (typeof messageObject.message.content.renderTracks === 'undefined') {
-          // @ts-expect-error
-          messageObject.message.content.renderTracks =
-            // @ts-expect-error
-            messageObject?.message?.content?.tracks
-              ?.map(({ notes }) => formatContent(notes))
-              .join('\n')
-        }
-
-        return (
-          // @ts-expect-error
-          typeof messageObject?.message?.content?.renderedTracks !==
-            'undefined' ? (
-            <li key={messageObject.id} className="beat-brain__suggestion">
-              <div className="beat-brain__suggestion__notes">
-                <ReactMarkdown linkTarget="_blank">
-                  {
-                    (messageObject?.message?.content as Record<string, any>)
-                      ?.renderTracks
-                  }
-                </ReactMarkdown>
-              </div>
-            </li>
-          ) : (
-            <React.Fragment key={messageObject.id}></React.Fragment>
-          )
-        )
-      })
-  }
-
   useInterval(getStatePosition, isPaused ? null : 200)
 
   useEffect(() => {
@@ -402,8 +285,9 @@ const WebPlayer = (): React.ReactElement => {
     ) {
       doesUserLikeTrack()
         .then((liked) => {
-          // @ts-expect-error
-          setCurrentTrack((currentTrack) => ({ ...currentTrack, liked }))
+          const isLiked = Object.values(liked)[0]
+
+          setLikedTrack(isLiked)
         })
         .catch((error) => {
           console.error(error)
@@ -569,14 +453,12 @@ const WebPlayer = (): React.ReactElement => {
             ) : (
               <></>
             )}
-            <div
-              className={`beat-brain-container beat-brain-container--${
-                showPlayer ? 'background' : 'foreground'
-              }`}>
-              <div className="beat-brain__commentary">
-                <ol>{renderCommentary()}</ol>
-              </div>
-            </div>
+            <BeatBrainNotes
+              showPlayer={showPlayer}
+              artistStore={artistStore}
+              trackStore={trackStore}
+              conversation={conversation}
+            />
           </div>
           {typeof currentTrack !== 'undefined' && currentTrack !== null ? (
             <div className="now-playing">
@@ -615,29 +497,19 @@ const WebPlayer = (): React.ReactElement => {
               </div>
               <button
                 className="btn-spotify btn-spotify__like"
-                title={
-                  // @ts-expect-error
-                  currentTrack.liked === true ? 'Unlike' : 'Like'
-                }
+                title={likedTrack ? 'Unlike' : 'Like'}
                 onClick={() => {
                   fetchHandler(`/api/spotify/like/${currentTrack.id}`, {
-                    // @ts-expect-error
-                    method: currentTrack.liked === true ? 'DELETE' : 'POST'
+                    method: likedTrack ? 'DELETE' : 'POST'
                   })
                     .then((response) => {
-                      // @ts-expect-error
-                      currentTrack.liked = response[currentTrack?.id] ?? false
+                      setLikedTrack(response[currentTrack?.id] ?? false)
                     })
                     .catch((error) => {
                       console.error(error)
                     })
                 }}>
-                <LikeIcon
-                  stroke={
-                    // @ts-expect-error
-                    currentTrack.liked === true ? '#1db954' : '#fff'
-                  }
-                />
+                <LikeIcon stroke={likedTrack ? '#1db954' : '#fff'} />
               </button>
             </div>
           ) : (

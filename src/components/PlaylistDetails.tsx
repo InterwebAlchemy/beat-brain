@@ -62,8 +62,8 @@ const PlaylistDetails = ({
             <button
               className="playlist-details__track__button"
               onClick={onPlayTrack}
-              data-spotifyId={item?.id}
-              data-spotifyUri={item?.uri}>
+              data-spotifyid={item?.id}
+              data-spotifyuri={item?.uri}>
               <div className="playlist-details__track__header">
                 <div className="playlist-details__track__image">
                   <img

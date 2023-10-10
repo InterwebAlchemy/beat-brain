@@ -81,13 +81,21 @@ const useChat = (): {
 
         const { playlist } = response
 
-        conversation.addPlaylist(playlist)
+        const missingTracks = playlist.tracks.some(({ error }) => error)
 
-        // we don't want to remember every recommendation because it would
-        // pollute our memory context and wast tokens
-        message.memoryState = 'forgotten'
+        if (missingTracks === true) {
+          const newResult = await getRecommendations(request, init)
 
-        result = playlist
+          return newResult
+        } else {
+          conversation.addPlaylist(playlist)
+
+          // we don't want to remember every recommendation because it would
+          // pollute our memory context and wast tokens
+          message.memoryState = 'forgotten'
+
+          result = playlist
+        }
       } catch (error) {
         console.error(error)
 
