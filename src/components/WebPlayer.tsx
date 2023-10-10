@@ -3,7 +3,7 @@ import { useSession } from '@supabase/auth-helpers-react'
 import Image from 'next/image'
 import Script from 'next/script'
 import ReactMarkdown from 'react-markdown'
-import type { Track } from '@spotify/web-api-ts-sdk'
+import type { Artist, SimplifiedArtist, Track } from '@spotify/web-api-ts-sdk'
 
 import QueueIcon from './Icons/Queue'
 import TurntableIcon from './Icons/Turntable'
@@ -43,6 +43,11 @@ const WebPlayer = (): React.ReactElement => {
   const [progress, setProgress] = useState<number>(0)
   const [flipped, setFlipped] = useState<boolean>(false)
   const [recommendations, setRecommendations] = useState<Track[]>([])
+
+  const [trackStore, setTrackStore] = useState<Record<string, Track>>({})
+  const [artistStore, setArtistStore] = useState<
+    Record<string, Artist | SimplifiedArtist>
+  >({})
 
   const recommendationRequest = new AbortController()
   const queueTrackRequest = new AbortController()
@@ -103,6 +108,30 @@ const WebPlayer = (): React.ReactElement => {
             tracks.map(async ({ track }) => {
               if (typeof track !== 'undefined') {
                 const { uri } = track
+
+                if (
+                  Object.prototype.hasOwnProperty.call(trackStore, track.id) ===
+                  false
+                ) {
+                  setTrackStore((trackStore) => ({
+                    ...trackStore,
+                    [track.id]: track
+                  }))
+                }
+
+                track.artists.forEach((artist) => {
+                  if (
+                    Object.prototype.hasOwnProperty.call(
+                      artistStore,
+                      artist.id
+                    ) === false
+                  ) {
+                    setArtistStore((artistStore) => ({
+                      ...artistStore,
+                      [artist.id]: artist
+                    }))
+                  }
+                })
 
                 try {
                   const queue = await fetchHandler<{ queued: string }>(
@@ -188,7 +217,7 @@ const WebPlayer = (): React.ReactElement => {
   }
 
   const renderCommentary = (): React.ReactElement[] => {
-    const formatContent = (content: string = '', track: Track): string => {
+    const formatContent = (content: string = ''): string => {
       const entityTagRegex =
         /<(Track|Song|Artist)>(.*?)<\/(Track|Song|Artist)>/gim
 
@@ -209,21 +238,22 @@ const WebPlayer = (): React.ReactElement => {
               (entityType === 'Track' && !entityTagRegex.test(entityName)) ||
               entityType === 'Song'
             ) {
-              if (
-                typeof currentTrack !== 'undefined' &&
-                currentTrack.name.toLowerCase() === checkEntityName
-              ) {
+              const foundTrackDetails = Object.values(trackStore).find(
+                (track) => {
+                  if (track.name.trim().toLowerCase() === checkEntityName) {
+                    return track
+                  }
+
+                  return false
+                }
+              )
+
+              if (typeof foundTrackDetails !== 'undefined') {
                 content = content.replaceAll(
                   fullMatch,
-                  `[${currentTrack.name}](${spotifyUriToUrl(currentTrack.uri)})`
-                )
-              } else if (
-                typeof track !== 'undefined' &&
-                track.name.toLowerCase() === checkEntityName
-              ) {
-                content = content.replaceAll(
-                  fullMatch,
-                  `[${track.name}](${spotifyUriToUrl(track.uri)})`
+                  `[${foundTrackDetails.name}](${spotifyUriToUrl(
+                    foundTrackDetails.uri
+                  )})`
                 )
               } else {
                 content = content.replaceAll(fullMatch, entityName)
@@ -232,49 +262,23 @@ const WebPlayer = (): React.ReactElement => {
 
             break
           case 'Artist': {
-            if (typeof currentTrack !== 'undefined') {
-              const currentArtist = currentTrack.artists.find(
-                (artist) => artist.name.toLowerCase() === checkEntityName
-              )
-
-              if (typeof currentArtist !== 'undefined') {
-                content = content.replaceAll(
-                  fullMatch,
-                  `[${currentArtist.name}](${spotifyUriToUrl(
-                    currentArtist.uri
-                  )})`
-                )
-              } else if (typeof track !== 'undefined') {
-                const suggestedArtist = track.artists.find(
-                  (artist) => artist.name.toLowerCase() === checkEntityName
-                )
-
-                if (typeof suggestedArtist !== 'undefined') {
-                  content = content.replaceAll(
-                    fullMatch,
-                    `[${suggestedArtist.name}](${spotifyUriToUrl(
-                      suggestedArtist.uri
-                    )})`
-                  )
-                } else {
-                  content = content.replaceAll(fullMatch, entityName)
+            const foundArtistDetails = Object.values(artistStore).find(
+              (artist) => {
+                if (artist.name.trim().toLowerCase() === checkEntityName) {
+                  return artist
                 }
-              } else {
-                content = content.replaceAll(fullMatch, entityName)
-              }
-            } else if (typeof track !== 'undefined') {
-              const artist = track.artists.find(
-                (artist) => artist.name.toLowerCase() === checkEntityName
-              )
 
-              if (typeof artist !== 'undefined') {
-                content = content.replaceAll(
-                  fullMatch,
-                  `[${artist.name}](${spotifyUriToUrl(artist.uri)})`
-                )
-              } else {
-                content = content.replaceAll(fullMatch, entityName)
+                return false
               }
+            )
+
+            if (typeof foundArtistDetails !== 'undefined') {
+              content = content.replaceAll(
+                fullMatch,
+                `[${foundArtistDetails.name}](${spotifyUriToUrl(
+                  foundArtistDetails.uri
+                )})`
+              )
             } else {
               content = content.replaceAll(fullMatch, entityName)
             }
@@ -299,19 +303,34 @@ const WebPlayer = (): React.ReactElement => {
       )
       .reverse()
       .map((messageObject) => {
+        // TODO: fix all these type errors instead of ignoring them
+        // @ts-expect-error
+        if (typeof messageObject.message.content.renderTracks === 'undefined') {
+          // @ts-expect-error
+          messageObject.message.content.renderTracks =
+            // @ts-expect-error
+            messageObject?.message?.content?.tracks
+              ?.map(({ notes }) => formatContent(notes))
+              .join('\n')
+        }
+
         return (
-          <li key={messageObject.id} className="beat-brain__suggestion">
-            <div className="beat-brain__suggestion__notes">
-              <ReactMarkdown linkTarget="_blank">
-                {
-                  // @ts-expect-error
-                  messageObject?.message?.content?.tracks
-                    ?.map(({ notes, track }) => formatContent(notes, track))
-                    .join('\n')
-                }
-              </ReactMarkdown>
-            </div>
-          </li>
+          // @ts-expect-error
+          typeof messageObject?.message?.content?.renderedTracks !==
+            'undefined' ? (
+            <li key={messageObject.id} className="beat-brain__suggestion">
+              <div className="beat-brain__suggestion__notes">
+                <ReactMarkdown linkTarget="_blank">
+                  {
+                    (messageObject?.message?.content as Record<string, any>)
+                      ?.renderTracks
+                  }
+                </ReactMarkdown>
+              </div>
+            </li>
+          ) : (
+            <React.Fragment key={messageObject.id}></React.Fragment>
+          )
         )
       })
   }
@@ -384,11 +403,32 @@ const WebPlayer = (): React.ReactElement => {
       doesUserLikeTrack()
         .then((liked) => {
           // @ts-expect-error
-          currentTrack.liked = liked
+          setCurrentTrack((currentTrack) => ({ ...currentTrack, liked }))
         })
         .catch((error) => {
           console.error(error)
         })
+
+      if (
+        Object.prototype.hasOwnProperty.call(trackStore, currentTrack.id) ===
+        false
+      ) {
+        setTrackStore((trackStore) => ({
+          ...trackStore,
+          [currentTrack.id]: currentTrack
+        }))
+      }
+
+      currentTrack.artists.forEach((artist) => {
+        if (
+          Object.prototype.hasOwnProperty.call(artistStore, artist.id) === false
+        ) {
+          setArtistStore((artistStore) => ({
+            ...artistStore,
+            [artist.id]: artist
+          }))
+        }
+      })
 
       currentlyListeningTrackRecommendations().catch((error) => {
         console.error(error)
