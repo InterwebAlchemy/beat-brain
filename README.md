@@ -2,6 +2,10 @@
 
 > BeatBrain is a music recommendation engine built on Supabase, Next.js, and Vercel powered by ChatGPT and Spotify.
 
+https://github.com/InterwebAlchemy/beat-brain/assets/1667415/2948b491-529f-48df-bae6-f294c68d0d42
+
+## Demo GIF
+
 ![BeatBrain](https://github.com/InterwebAlchemy/beat-brain/assets/1667415/165bcde8-b3db-4d2f-bc51-d9f71b8f4cac)
 
 ## What is this?
