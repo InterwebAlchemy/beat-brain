@@ -72,8 +72,8 @@ const getPlaylist = async (req, res): Promise<void> => {
                     ) {
                       track.track = foundTrack
                     } else {
-                      // @ts-expect-error
                       track = {
+                        // @ts-expect-error
                         error: true,
                         message: "That track doesn't exist"
                       }
